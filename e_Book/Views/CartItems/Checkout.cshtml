@@ -1,0 +1,112 @@
+﻿@model IEnumerable<e_Book.Models.CartItem>
+
+@{
+    ViewBag.Title = "תשלום";
+    var grandTotal = Model.Sum(item => (item.TransactionType == "buy" ? item.Book.PriceBuy : item.Book.PriceBorrow) * item.Quantity);
+}
+
+<h2>תשלום עבור עגלת הקניות</h2>
+
+<!-- הודעות הצלחה או שגיאה -->
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<!-- טבלת פרטי העגלה -->
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ספר</th>
+            <th>מחיר</th>
+            <th>כמות</th>
+            <th>סוג עסקה</th>
+            <th>סך הכל</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Book.Title</td>
+                <td>@string.Format("{0:C}", item.TransactionType == "buy" ? item.Book.PriceBuy : item.Book.PriceBorrow)</td>
+                <td>@item.Quantity</td>
+                <td>
+                    <input type="hidden" name="TransactionType" value="@item.TransactionType" />
+                    @(item.TransactionType == "buy" ? "קנייה" : "השאלה")
+                </td>
+                <td>@string.Format("{0:C}", (item.TransactionType == "buy" ? item.Book.PriceBuy : item.Book.PriceBorrow) * item.Quantity)</td>
+            </tr>
+        }
+    </tbody>
+
+</table>
+
+<!-- הצגת סה\"כ כלל -->
+<h3>סה\"כ לתשלום: @string.Format("{0:C}", grandTotal)</h3>
+
+<!-- טופס תשלום -->
+<form method="post" id="paymentForm" action="@Url.Action("ProcessPayment", "CartItems")">
+    @Html.AntiForgeryToken()
+    <div class="form-check">
+        <input class="form-check-input" type="radio" name="paymentMethod" id="creditCardOption" value="creditCard" checked>
+        <label class="form-check-label" for="creditCardOption">תשלום באמצעות כרטיס אשראי</label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="radio" name="paymentMethod" id="paypalOption" value="paypal">
+        <label class="form-check-label" for="paypalOption">תשלום באמצעות PayPal</label>
+    </div>
+
+    <!-- פרטי כרטיס אשראי -->
+    <div id="creditCardForm">
+        <div class="form-group">
+            <label for="cardNumber">מספר כרטיס אשראי</label>
+            <input type="text" class="form-control" id="cardNumber" name="cardNumber" required>
+        </div>
+        <div class="form-group">
+            <label for="expiryDate">תאריך תפוגה</label>
+            <input type="text" class="form-control" id="expiryDate" name="expiryDate" placeholder="MM/YY" required>
+        </div>
+        <div class="form-group">
+            <label for="cvv">CVV</label>
+            <input type="text" class="form-control" id="cvv" name="cvv" required>
+        </div>
+    </div>
+
+    <!-- כפתור ל-PayPal -->
+    <div id="paypalButton" style="display: none;">
+        <button type="submit" class="btn btn-warning">המשך ל-PayPal</button>
+    </div>
+
+    <input type="hidden" name="totalAmount" value="@grandTotal" />
+
+    <button type="submit" id="creditCardButton" class="btn btn-primary">בצע תשלום</button>
+</form>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const creditCardForm = document.getElementById("creditCardForm");
+        const paypalButton = document.getElementById("paypalButton");
+        const creditCardButton = document.getElementById("creditCardButton");
+
+        document.getElementById("paypalOption").addEventListener("change", function () {
+            if (this.checked) {
+                creditCardForm.style.display = "none";
+                creditCardButton.style.display = "none";
+                paypalButton.style.display = "block";
+            }
+        });
+
+        document.getElementById("creditCardOption").addEventListener("change", function () {
+            if (this.checked) {
+                creditCardForm.style.display = "block";
+                creditCardButton.style.display = "block";
+                paypalButton.style.display = "none";
+            }
+        });
+    });
+</script>

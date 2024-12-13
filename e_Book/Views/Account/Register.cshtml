@@ -1,0 +1,33 @@
+﻿@{
+    ViewBag.Title = "הרשמה למערכת";
+}
+
+<h2>הרשמה למערכת</h2>
+
+@if (ViewBag.Error != null)
+{
+    <div class="alert alert-danger">@ViewBag.Error</div>
+}
+
+@using (Html.BeginForm("Register", "Account", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    <div class="form-group">
+        <label>שם מלא:</label>
+        <input type="text" name="name" class="form-control" placeholder="הזן שם מלא" />
+    </div>
+    <div class="form-group">
+        <label>אימייל:</label>
+        <input type="email" name="email" class="form-control" placeholder="הזן אימייל" />
+    </div>
+    <div class="form-group">
+        <label>סיסמה:</label>
+        <input type="password" name="password" class="form-control" placeholder="הזן סיסמה" />
+    </div>
+    <div class="form-group">
+        <label>גיל:</label>
+        <input type="number" name="age" class="form-control" placeholder="הזן גיל" min="1" />
+    </div>
+    <button type="submit" class="btn btn-primary">הרשם</button>
+}
+

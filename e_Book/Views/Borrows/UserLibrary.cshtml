@@ -1,0 +1,99 @@
+﻿@model IEnumerable<e_Book.Models.UserLibraryItem>
+
+@{
+    ViewBag.Title = "ספרייה אישית";
+    string userName = Session["UserName"] != null ? Session["UserName"].ToString() : "אורח"; // שליפת שם המשתמש מה-Session
+}
+
+<h2>ספרייה אישית</h2>
+
+<!-- הצגת הודעת שלום -->
+@if (userName != "אורח")
+{
+    <div class="alert alert-info">
+        שלום, @userName!
+    </div>
+}
+else
+{
+    <div class="alert alert-warning">
+        שלום, אורח! אנא התחבר כדי לצפות בספריה האישית שלך.
+    </div>
+}
+
+<!-- הודעות שגיאה או הצלחה -->
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>כותרת הספר</th>
+            <th>תאריך השאלה</th>
+            <th>תאריך להחזרה</th>
+            <th>תאריך רכישה</th>
+            <th>סטטוס</th>
+            <th>פעולות</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Title</td>
+                <td>@(item.BorrowDate.HasValue ? item.BorrowDate.Value.ToShortDateString() : "לא הושאל")</td>
+                <td>@(item.DueDate.HasValue ? item.DueDate.Value.ToShortDateString() : "לא הושאל")</td>
+                <td>@(item.PurchaseDate.HasValue ? item.PurchaseDate.Value.ToShortDateString() : "לא נרכש")</td>
+
+                <td>@(item.IsBorrowed ? "מושאל" : item.IsPurchased ? "נרכש" : "לא נרכש")</td>
+                <td>
+                    <!-- כפתור החזרת ספר -->
+                    @if (item.IsBorrowed || item.IsPurchased)
+                    {
+                        <form action="@Url.Action("ReturnBook", "Borrows")" method="post" style="display:inline-block;" onsubmit="return confirmReturn(@item.IsPurchased);">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="borrowId" value="@item.BorrowId" />
+                            <input type="hidden" name="bookId" value="@item.BookId" />
+                            <button type="submit" class="btn btn-danger">החזר ספר</button>
+                        </form>
+                    }
+
+                    <!-- כפתור הוספת חוות דעת -->
+                    @if (item.IsBorrowed || item.IsPurchased)
+                    {
+                        <a href="@Url.Action("AddFeedback", "Feedbacks", new { bookId = item.BookId })" class="btn btn-primary">הוסף חוות דעת</a>
+                        <a href="@Url.Action("AddPurchaseFeedback", "Feedbacks", new { bookId = item.BookId })" class="btn btn-warning">הוסף חוות דעת לרכישה</a>
+                    }
+
+
+                    <!-- כפתור הורדת ספר -->
+                    @if (!string.IsNullOrEmpty(item.DownloadLink))
+                    {
+                        <a href="@Url.Action("DownloadBook", "Borrows", new { bookId = item.BookId })" class="btn btn-success">הורד ספר</a>
+                    }
+                    else
+                    {
+                        <span class="text-danger">לא נמצא קישור להורדה לספר זה.</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        function confirmReturn(isPurchased) {
+            if (isPurchased) {
+                return confirm("האם אתה בטוח שברצונך להחזיר את הספר שנרכש? פעולה זו תסיר את הספר מהספרייה האישית שלך.");
+            }
+            return true;
+        }
+    </script>
+}

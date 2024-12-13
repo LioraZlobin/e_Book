@@ -1,0 +1,37 @@
+﻿@model e_Book.Models.Feedback
+
+@{
+    ViewBag.Title = "הוסף חוות דעת";
+}
+
+<h2>הוסף חוות דעת</h2>
+
+@if (ViewBag.Error != null)
+{
+    <div class="alert alert-danger">@ViewBag.Error</div>
+}
+@if (ViewBag.Success != null)
+{
+    <div class="alert alert-success">@ViewBag.Success</div>
+}
+
+@using (Html.BeginForm("AddFeedback", "Feedbacks", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-group">
+        <label>דירוג (1-5):</label>
+        @Html.DropDownListFor(model => model.Rating, new SelectList(Enumerable.Range(1, 5)), "בחר דירוג", new { @class = "form-control" })
+        @Html.ValidationMessageFor(model => model.Rating, "", new { @class = "text-danger" })
+    </div>
+
+    <div class="form-group">
+        <label>תוכן חוות הדעת:</label>
+        @Html.TextAreaFor(model => model.Content, new { @class = "form-control", rows = 5 })
+        @Html.ValidationMessageFor(model => model.Content, "", new { @class = "text-danger" })
+    </div>
+
+    <input type="hidden" name="BookId" value="@ViewBag.BookId" />
+
+    <button type="submit" class="btn btn-primary">שלח</button>
+}

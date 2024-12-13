@@ -1,0 +1,79 @@
+﻿@model e_Book.Models.Book
+
+@{
+    ViewBag.Title = "Details";
+}
+
+<div class="container">
+    <h2 class="my-4 text-center">Book Details</h2>
+
+    <div class="row">
+        <!-- עמודה לתמונה -->
+        <div class="col-md-4 text-center">
+            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+            {
+                <img src="@Model.ImageUrl" alt="@Model.Title" class="img-thumbnail" style="max-height: 300px; max-width: 100%;">
+            }
+            else
+            {
+                <img src="/images/default-book.png" alt="No image available" class="img-thumbnail" style="max-height: 300px; max-width: 100%;">
+            }
+        </div>
+
+        <!-- עמודה למידע על הספר -->
+        <div class="col-md-8">
+            <dl class="row">
+                <dt class="col-sm-4">@Html.DisplayNameFor(model => model.Title)</dt>
+                <dd class="col-sm-8">@Html.DisplayFor(model => model.Title)</dd>
+
+                <dt class="col-sm-4">@Html.DisplayNameFor(model => model.Author)</dt>
+                <dd class="col-sm-8">@Html.DisplayFor(model => model.Author)</dd>
+
+                <dt class="col-sm-4">@Html.DisplayNameFor(model => model.Publisher)</dt>
+                <dd class="col-sm-8">@Html.DisplayFor(model => model.Publisher)</dd>
+
+                <dt class="col-sm-4">@Html.DisplayNameFor(model => model.PriceBuy)</dt>
+                <dd class="col-sm-8">@Html.DisplayFor(model => model.PriceBuy)</dd>
+
+                <dt class="col-sm-4">@Html.DisplayNameFor(model => model.PriceBorrow)</dt>
+                <dd class="col-sm-8">@Html.DisplayFor(model => model.PriceBorrow)</dd>
+
+                <dt class="col-sm-4">@Html.DisplayNameFor(model => model.AvailableCopies)</dt>
+                <dd class="col-sm-8">@Html.DisplayFor(model => model.AvailableCopies)</dd>
+
+                <dt class="col-sm-4">@Html.DisplayNameFor(model => model.Format)</dt>
+                <dd class="col-sm-8">@Html.DisplayFor(model => model.Format)</dd>
+
+                <dt class="col-sm-4">@Html.DisplayNameFor(model => model.YearPublished)</dt>
+                <dd class="col-sm-8">@Html.DisplayFor(model => model.YearPublished)</dd>
+
+                <dt class="col-sm-4">@Html.DisplayNameFor(model => model.IsBorrowable)</dt>
+                <dd class="col-sm-8">@Html.DisplayFor(model => model.IsBorrowable)</dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- שדה לתקציר -->
+    <div class="row my-4">
+        <div class="col-12">
+            <h4>Book Synopsis</h4>
+            <p>
+                @if (!string.IsNullOrEmpty(Model.Synopsis))
+                {
+                    @Model.Synopsis
+                }
+                else
+                {
+                    <span>No synopsis available.</span>
+                }
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 text-center">
+            @Html.ActionLink("Edit", "Edit", new { id = Model.BookId }, new { @class = "btn btn-primary mx-2" }) |
+            @Html.ActionLink("Back to List", "Index", null, new { @class = "btn btn-secondary mx-2" })
+        </div>
+    </div>
+</div>

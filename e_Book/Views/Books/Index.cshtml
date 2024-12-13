@@ -1,0 +1,111 @@
+﻿@model IEnumerable<e_Book.Models.Book>
+
+@{ ViewBag.Title = "Books"; }
+
+<div class="container">
+    <div class="row mb-4">
+        <!-- שדה חיפוש -->
+        <div class="col-md-6">
+            <form action="@Url.Action("Search", "Books")" method="get" class="form-inline">
+                <input type="text" name="query" placeholder="חפש ספר לפי שם, מחבר או הוצאה לאור..." class="form-control mr-2" />
+                <button type="submit" class="btn btn-primary">חפש</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- הודעות שגיאה או הצלחה -->
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger" id="message-box">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success" id="message-box">@TempData["Success"]</div>
+}
+
+<div class="btn-group mb-4">
+    <a href="@Url.Action("FilterDiscountedBooks", "Books")" class="btn btn-secondary">ספרים בהנחה</a>
+    <a href="@Url.Action("Sort", "Books", new { sortBy = "price_asc" })" class="btn btn-secondary">מחיר - מהנמוך לגבוה</a>
+    <a href="@Url.Action("Sort", "Books", new { sortBy = "price_desc" })" class="btn btn-secondary">מחיר - מהגבוה לנמוך</a>
+    <a href="@Url.Action("Sort", "Books", new { sortBy = "year" })" class="btn btn-secondary">שנה - מהחדשה לישנה</a>
+    <a href="@Url.Action("Sort", "Books", new { sortBy = "year_asc" })" class="btn btn-secondary">שנה - מהישנה לחדשה</a>
+</div>
+
+<h3>Books</h3>
+
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+
+<div class="container">
+    <div class="row">
+        @foreach (var item in Model)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <img src="@item.ImageUrl" class="card-img-top" alt="@item.Title" style="height: 250px; object-fit: cover;" />
+                    <div class="card-body">
+                        <h5 class="card-title">@item.Title</h5>
+                        <p class="card-text">
+                            <strong>מחבר:</strong> @item.Author<br />
+                            <strong>הוצאה:</strong> @item.Publisher<br />
+                            <strong>מחיר קנייה:</strong> @item.PriceBuy.ToString("C")<br />
+                            <strong>מחיר השאלה:</strong> @item.PriceBorrow.ToString("C")<br />
+                            <strong>עותקים זמינים:</strong> @item.AvailableCopies<br />
+                        </p>
+                        <div class="d-flex justify-content-between">
+                            @Html.ActionLink("Edit", "Edit", new { id = item.BookId }, new { @class = "btn btn-secondary btn-sm" })
+                            @Html.ActionLink("Details", "Details", new { id = item.BookId }, new { @class = "btn btn-info btn-sm" })
+                            @Html.ActionLink("Delete", "Delete", new { id = item.BookId }, new { @class = "btn btn-danger btn-sm" })
+                        </div>
+                        @if (User.Identity.IsAuthenticated && item.IsBorrowable)
+                        {
+                            <form action="@Url.Action("AddToCart", "CartItems", new { bookId = item.BookId })" method="post" class="mt-2">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-primary btn-sm w-100">הוסף לעגלת הקניות</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const messageBox = document.getElementById("message-box");
+        if (messageBox) {
+            setTimeout(() => {
+                messageBox.style.display = "none";
+            }, 3000); // הסתרה לאחר 3 שניות
+        }
+    });
+
+    function addToCart(bookId) {
+        fetch('/CartItems/AddToCart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify({ bookId: bookId }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                // יצירת הודעה
+                const alertDiv = document.createElement('div');
+                alertDiv.className = data.success ? 'alert alert-success' : 'alert alert-danger';
+                alertDiv.innerText = data.message;
+                document.body.prepend(alertDiv);
+
+                // הסרת ההודעה אחרי 3 שניות
+                setTimeout(() => alertDiv.remove(), 3000);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('שגיאה בתקשורת עם השרת.');
+            });
+    }
+</script>

@@ -1,0 +1,11 @@
+﻿@{
+    ViewBag.Title = "Admin Dashboard";
+}
+
+<h3>ברוך הבא, מנהל מערכת!</h3>
+
+<p>בחר פעולה:</p>
+<ul>
+    <li>@Html.ActionLink("ניהול ספרים", "Index", "Books")</li>
+    <li>@Html.ActionLink("ניהול משתמשים", "Index", "Users")</li>
+</ul>
