@@ -246,7 +246,7 @@ namespace e_Book.Controllers
                 UserId = userId,
                 BookId = bookId,
                 Quantity = 1,
-                TransactionType = "buy"
+                TransactionType = book.IsBorrowable ? "buy" : "buy" // רק קנייה במידה ולא ניתן להשאלה
             };
 
             book.AvailableCopies--; // הורדת עותק זמין
@@ -256,6 +256,7 @@ namespace e_Book.Controllers
             TempData["Success"] = "הספר נוסף לעגלת הקניות בהצלחה!";
             return RedirectToAction("Index", "Books");
         }
+
 
 
 
