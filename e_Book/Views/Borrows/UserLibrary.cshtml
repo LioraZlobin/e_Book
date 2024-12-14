@@ -53,16 +53,21 @@ else
 
                 <td>@(item.IsBorrowed ? "מושאל" : item.IsPurchased ? "נרכש" : "לא נרכש")</td>
                 <td>
-                    <!-- כפתור החזרת ספר -->
-                    @if (item.IsBorrowed || item.IsPurchased)
-                    {
-                        <form action="@Url.Action("ReturnBook", "Borrows")" method="post" style="display:inline-block;" onsubmit="return confirmReturn(@item.IsPurchased);">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="borrowId" value="@item.BorrowId" />
-                            <input type="hidden" name="bookId" value="@item.BookId" />
-                            <button type="submit" class="btn btn-danger">החזר ספר</button>
-                        </form>
-                    }
+                    @if (item.IsBorrowed)
+                    {<!-- כפתור החזרת ספר מושאל -->
+                                    <form action="@Url.Action("ReturnBook", "Borrows")" method="post" style="display:inline-block;" onsubmit="return confirmReturn(false);">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="borrowId" value="@item.BorrowId" />
+                                        <input type="hidden" name="bookId" value="@item.BookId" />
+                                        <button type="submit" class="btn btn-danger">החזר ספר</button>
+                                    </form> }
+                                                    else if (item.IsPurchased)
+                                                    { <!-- כפתור מחיקת ספר שנרכש -->
+                                                        <form action="@Url.Action("DeletePurchasedBook", "Borrows")" method="post" style="display:inline-block;" onsubmit="return confirm('האם אתה בטוח שברצונך למחוק את הספר שנרכש? פעולה זו תסיר אותו לצמיתות מהספרייה האישית שלך.');">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="bookId" value="@item.BookId" />
+                                                            <button type="submit" class="btn btn-warning">מחק ספר</button>
+                                                        </form>}
 
                     <!-- כפתור הוספת חוות דעת -->
                     @if (item.IsBorrowed || item.IsPurchased)

@@ -216,7 +216,7 @@ namespace e_Book.Controllers
 
             if (book.AvailableCopies <= 0)
             {
-                // הוספת המשתמש לרשימת ההמתנה אם אין עותקים זמינים
+                // הוספת המשתמש לרשימת המתנה אם אין עותקים זמינים
                 var waitingUser = new WaitingList
                 {
                     UserId = userId,
@@ -240,25 +240,21 @@ namespace e_Book.Controllers
                 return RedirectToAction("Index", "Books");
             }
 
-            // הוספת הספר לעגלה
+            // הוספת הספר לעגלה ללא שינוי במלאי
             var newItem = new CartItem
             {
                 UserId = userId,
                 BookId = bookId,
                 Quantity = 1,
-                TransactionType = book.IsBorrowable ? "buy" : "buy" // רק קנייה במידה ולא ניתן להשאלה
+                TransactionType = "buy" // או "borrow" בהתאם לספר
             };
 
-            book.AvailableCopies--; // הורדת עותק זמין
             db.CartItems.Add(newItem);
             db.SaveChanges();
 
             TempData["Success"] = "הספר נוסף לעגלת הקניות בהצלחה!";
             return RedirectToAction("Index", "Books");
         }
-
-
-
 
 
 
@@ -367,9 +363,6 @@ namespace e_Book.Controllers
                     db.Purchases.Add(purchase);
                 }
 
-                // עדכון העותקים הזמינים
-                book.AvailableCopies--;
-
                 // שמירה בטבלת Payment
                 var payment = new Payment
                 {
@@ -380,6 +373,9 @@ namespace e_Book.Controllers
                     PaymentDate = DateTime.Now
                 };
                 db.Payments.Add(payment);
+
+                // עדכון העותקים הזמינים
+                book.AvailableCopies--;
             }
 
             // מחיקת כל הפריטים מהעגלה
@@ -391,6 +387,7 @@ namespace e_Book.Controllers
             TempData["Success"] = "התשלום הושלם בהצלחה! הספרים נוספו לרשומות שלך, והעותקים המעודכנים נשמרו.";
             return RedirectToAction("Index", "Books");
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -404,36 +401,24 @@ namespace e_Book.Controllers
                 return RedirectToAction("Index", "CartItems");
             }
 
-            // הסרת הפריט מהעגלה
+            // שמירת המידע על הספר והמשתמש
             var book = cartItem.Book;
+            var userId = cartItem.UserId;
+
+            // הסרת הפריט מהעגלה
             db.CartItems.Remove(cartItem);
-            db.SaveChanges();
 
-            // בדיקה אם יש רשימת המתנה לספר
-            var nextWaitingUser = db.WaitingLists
-                                    .Where(w => w.BookId == book.BookId)
-                                    .OrderBy(w => w.Position) // לפי המיקום בתור
-                                    .FirstOrDefault();
+            // בדיקה אם המשתמש הגיע מרשימת המתנה
+            var waitingUser = db.WaitingLists
+                                .Where(w => w.BookId == book.BookId)
+                                .OrderBy(w => w.Position) // לפי המיקום בתור
+                                .FirstOrDefault(w => w.UserId == userId);
 
-            if (nextWaitingUser != null)
+            // אם המשתמש קיבל את הספר מתוך רשימת המתנה
+            if (waitingUser != null)
             {
-                // הוספת הספר לעגלת הקניות של המשתמש הבא
-                var newCartItem = new CartItem
-                {
-                    UserId = nextWaitingUser.UserId,
-                    BookId = book.BookId,
-                    Quantity = 1,
-                    TransactionType = "borrow" // או "buy" אם מדובר ברכישה
-                };
-                db.CartItems.Add(newCartItem);
-
                 // הסרת המשתמש מרשימת ההמתנה
-                db.WaitingLists.Remove(nextWaitingUser);
-            }
-            else
-            {
-                // אין רשימת המתנה - העלאת מספר העותקים
-                book.AvailableCopies++;
+                db.WaitingLists.Remove(waitingUser);
             }
 
             db.SaveChanges();
@@ -441,6 +426,9 @@ namespace e_Book.Controllers
             TempData["Success"] = "הפריט הוסר מהעגלה.";
             return RedirectToAction("Index", "CartItems");
         }
+
+
+
 
 
 

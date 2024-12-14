@@ -151,54 +151,103 @@ namespace e_Book.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult ReturnBook(int borrowId)
+        public ActionResult ReturnBook(int? borrowId, int? bookId)
         {
-            var borrow = db.Borrows.Find(borrowId);
-            if (borrow == null || borrow.IsReturned)
+            if (borrowId.HasValue)
             {
-                TempData["Error"] = "הספר כבר הוחזר או אינו קיים.";
-                return RedirectToAction("UserLibrary");
-            }
-
-            borrow.IsReturned = true; // סימון הספר כהוחזר
-            var book = db.Books.Find(borrow.BookId);
-
-            if (book == null)
-            {
-                TempData["Error"] = "הספר אינו קיים.";
-                return RedirectToAction("UserLibrary");
-            }
-
-            // טיפול ברשימת ההמתנה
-            var waitingUser = db.WaitingLists.FirstOrDefault(w => w.BookId == book.BookId);
-            if (waitingUser != null)
-            {
-                // הסרת המשתמש הראשון מרשימת ההמתנה
-                db.WaitingLists.Remove(waitingUser);
-
-                // הוספת הספר לעגלת הקניות של המשתמש הראשון
-                var newCartItem = new CartItem
+                // הטיפול במקרה של החזרת ספר שהושאל
+                var borrow = db.Borrows.FirstOrDefault(b => b.BorrowId == borrowId);
+                if (borrow == null || borrow.IsReturned)
                 {
-                    UserId = waitingUser.UserId,
-                    BookId = book.BookId,
-                    Quantity = 1,
-                    TransactionType = "borrow"
-                };
+                    TempData["Error"] = "הספר כבר הוחזר או אינו קיים.";
+                    return RedirectToAction("UserLibrary");
+                }
 
-                db.CartItems.Add(newCartItem);
-                TempData["Success"] = "הספר הועבר למשתמש הראשון ברשימת ההמתנה.";
+                borrow.IsReturned = true; // סימון הספר כהוחזר
+                var book = db.Books.FirstOrDefault(b => b.BookId == borrow.BookId);
+
+                if (book == null)
+                {
+                    TempData["Error"] = "הספר אינו קיים.";
+                    return RedirectToAction("UserLibrary");
+                }
+
+                // טיפול ברשימת ההמתנה
+                var waitingUser = db.WaitingLists
+                                    .Where(w => w.BookId == book.BookId)
+                                    .OrderBy(w => w.Position) // מוודא שהמשתמש הראשון מקבל עדיפות
+                                    .FirstOrDefault();
+
+                if (waitingUser != null)
+                {
+                    // הוספת הספר לעגלת הקניות של המשתמש הראשון ברשימת ההמתנה
+                    var newCartItem = new CartItem
+                    {
+                        UserId = waitingUser.UserId,
+                        BookId = book.BookId,
+                        Quantity = 1,
+                        TransactionType = "borrow" // במקרה של השאלה
+                    };
+                    book.AvailableCopies++;
+                    db.CartItems.Add(newCartItem);
+                    //db.WaitingLists.Remove(waitingUser); // הסרת המשתמש מרשימת ההמתנה
+                    TempData["Success"] = "הספר הועבר למשתמש הבא ברשימת ההמתנה.";
+                }
+                else
+                {
+                    // אין רשימת המתנה, עדכון העותקים הזמינים
+                    book.AvailableCopies++;
+                    TempData["Success"] = "הספר הוחזר בהצלחה.";
+                }
+            }
+            else if (bookId.HasValue)
+            {
+                // הטיפול במקרה של החזרת ספר שנרכש (אם רלוונטי)
+                int userId = GetCurrentUserId();
+
+                var purchasedBook = db.Purchases.FirstOrDefault(p => p.BookId == bookId && p.UserId == userId);
+                if (purchasedBook == null)
+                {
+                    TempData["Error"] = "הספר אינו קיים או לא נרכש.";
+                    return RedirectToAction("UserLibrary");
+                }
+
+                // מחיקת הרכישה
+                db.Purchases.Remove(purchasedBook);
+                TempData["Success"] = "הרכישה הוסרה מהספרייה האישית שלך.";
             }
             else
             {
-                // אין רשימת המתנה, עדכון העותקים הזמינים
-                book.AvailableCopies++;
-                TempData["Success"] = "הספר הוחזר בהצלחה.";
+                TempData["Error"] = "פרמטר לא תקין.";
+                return RedirectToAction("UserLibrary");
             }
 
             db.SaveChanges();
             return RedirectToAction("UserLibrary");
         }
 
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult DeletePurchasedBook(int bookId)
+        {
+            int userId = GetCurrentUserId();
+
+            var purchasedBook = db.Purchases.FirstOrDefault(p => p.BookId == bookId && p.UserId == userId);
+            if (purchasedBook == null)
+            {
+                TempData["Error"] = "הספר לא נמצא ברשימת הרכישות שלך.";
+                return RedirectToAction("UserLibrary");
+            }
+
+            // מחיקת הרכישה
+            db.Purchases.Remove(purchasedBook);
+            db.SaveChanges();
+
+            TempData["Success"] = "הספר נמחק בהצלחה מהספרייה האישית שלך.";
+            return RedirectToAction("UserLibrary");
+        }
 
 
 
