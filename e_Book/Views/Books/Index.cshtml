@@ -25,14 +25,18 @@
 }
 
 <div class="btn-group mb-4">
-    <a href="@Url.Action("FilterDiscountedBooks", "Books")" class="btn btn-secondary">ספרים בהנחה</a>
-    <a href="@Url.Action("Sort", "Books", new { sortBy = "price_asc" })" class="btn btn-secondary">מחיר - מהנמוך לגבוה</a>
-    <a href="@Url.Action("Sort", "Books", new { sortBy = "price_desc" })" class="btn btn-secondary">מחיר - מהגבוה לנמוך</a>
-    <a href="@Url.Action("Sort", "Books", new { sortBy = "year" })" class="btn btn-secondary">שנה - מהחדשה לישנה</a>
-    <a href="@Url.Action("Sort", "Books", new { sortBy = "year_asc" })" class="btn btn-secondary">שנה - מהישנה לחדשה</a>
+    <a href="@Url.Action("FilterDiscountedBooks", "Books")" class="filter-btn">ספרים בהנחה</a>
+    <a href="@Url.Action("Sort", "Books", new { sortBy = "price_asc" })" class="filter-btn">מחיר - מהנמוך לגבוה</a>
+    <a href="@Url.Action("Sort", "Books", new { sortBy = "price_desc" })" class="filter-btn">מחיר - מהגבוה לנמוך</a>
+    <a href="@Url.Action("Sort", "Books", new { sortBy = "year" })" class="filter-btn">שנה - מהחדשה לישנה</a>
+    <a href="@Url.Action("Sort", "Books", new { sortBy = "year_asc" })" class="filter-btn">שנה - מהישנה לחדשה</a>
 </div>
 
-<h3>Books</h3>
+<div class="books-title-container">
+    <h3 class="custom-title">BOOKS</h3>
+</div>
+
+
 
 <p>
     @Html.ActionLink("Create New", "Create")
