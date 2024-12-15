@@ -8,18 +8,79 @@ using System.Web;
 using System.Web.Mvc;
 using eBookLibrary.Models;
 using e_Book.Models;
+using e_Book.Services;
 
 namespace e_Book.Controllers
 {
     public class BorrowsController : Controller
     {
         private LibraryDbContext db = new LibraryDbContext();
+        private readonly EmailService _emailService = new EmailService();
 
         // GET: Borrows
         public ActionResult Index()
         {
             return View(db.Borrows.ToList());
         }
+
+
+        public void SendReminderEmails()
+        {
+            try
+            {
+                // שליפת ההשאלות שתאריך ההחזרה שלהן הוא 5 ימים מהיום
+                var borrows = db.Borrows
+                    .Where(b => !b.IsReturned && DbFunctions.DiffDays(DateTime.Now, b.DueDate) == 5 && !b.IsReminderSent)
+                    .Include(b => b.Book)
+                    .ToList();
+
+                System.Diagnostics.Debug.WriteLine($"Found {borrows.Count} borrows with due date in 5 days.");
+
+                foreach (var borrow in borrows)
+                {
+                    try
+                    {
+                        var user = db.Users.FirstOrDefault(u => u.UserId == borrow.UserId);
+                        if (user != null && !string.IsNullOrEmpty(user.Email))
+                        {
+                            string subject = "תזכורת: החזרת ספר";
+                            string body = $"שלום {user.Name},<br/><br/>"
+                                          + $"תזכורת כי נותרו לך 5 ימים להחזרת הספר \"{borrow.Book.Title}\".<br/>"
+                                          + $"תאריך החזרה: {borrow.DueDate:dd/MM/yyyy}.<br/><br/>"
+                                          + "תודה,<br/>צוות הספרייה.";
+
+                            // שליחת מייל
+                            _emailService.SendEmail(user.Email, subject, body);
+                            borrow.IsReminderSent = true;
+                            System.Diagnostics.Debug.WriteLine($"Email sent to {user.Email} for book \"{borrow.Book.Title}\".");
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine($"User or email not found for borrow ID {borrow.BorrowId}.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error sending email for borrow ID {borrow.BorrowId}: {ex.Message}");
+                    }
+                }
+                db.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in SendReminderEmails: {ex.Message}");
+            }
+        }
+
+        [HttpGet]
+        public ActionResult TestReminderEmails()
+        {
+            SendReminderEmails(); // הפעלת הפונקציה
+            return Content("Reminder emails sent successfully."); // הודעה על הצלחה
+        }
+
+
+
 
         // GET: Borrows/Details/5
         public ActionResult Details(int? id)

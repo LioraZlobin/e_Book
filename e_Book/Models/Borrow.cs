@@ -16,5 +16,6 @@ namespace e_Book.Models
         public bool IsReturned { get; set; } // האם הספר הוחזר
         public virtual Book Book { get; set; }
         public virtual User User { get; set; }
+        public bool IsReminderSent { get; internal set; }
     }
 }
