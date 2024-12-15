@@ -130,7 +130,6 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Helpers\PayPalService.cs" />
     <Compile Include="Migrations\202412051757174_InitialCreate.cs" />
     <Compile Include="Migrations\202412051757174_InitialCreate.designer.cs">
       <DependentUpon>202412051757174_InitialCreate.cs</DependentUpon>
