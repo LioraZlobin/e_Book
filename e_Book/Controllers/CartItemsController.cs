@@ -6,6 +6,9 @@ using System.Net;
 using System.Web.Mvc;
 using eBookLibrary.Models;
 using e_Book.Models;
+using System.IO;
+using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 namespace e_Book.Controllers
 {
@@ -298,7 +301,7 @@ namespace e_Book.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult ProcessPayment()
+        public ActionResult ProcessPayment() //לתשלום בכרטיס אשראי
         {
             int userId = GetLoggedInUserId();
 
@@ -364,7 +367,7 @@ namespace e_Book.Controllers
                 }
 
                 // שמירה בטבלת Payment
-                var payment = new Payment
+                var payment = new e_Book.Models.Payment
                 {
                     UserId = userId,
                     BookId = item.BookId,
@@ -428,15 +431,208 @@ namespace e_Book.Controllers
         }
 
 
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public ActionResult ProcessPaypalPayment(string orderId, string payerId)
+        //{
+        //    try
+        //    {
+        //        System.Diagnostics.Debug.WriteLine($"Order ID: {orderId}, Payer ID: {payerId}");
+
+        //        // בדיקת משתמש מחובר
+        //        var userId = GetLoggedInUserId();
+        //        if (userId <= 0)
+        //        {
+        //            return Json(new { success = false, message = "משתמש לא מחובר." });
+        //        }
+
+        //        // בדיקת עגלת הקניות
+        //        var cartItems = db.CartItems.Include(c => c.Book).Where(c => c.UserId == userId).ToList();
+        //        if (!cartItems.Any())
+        //        {
+        //            return Json(new { success = false, message = "עגלת הקניות ריקה." });
+        //        }
+
+        //        // רק וידוא שהפרטים התקבלו ללא בעיות (לא מעדכנים את מסד הנתונים)
+        //        if (!string.IsNullOrEmpty(orderId) && !string.IsNullOrEmpty(payerId))
+        //        {
+        //            return Json(new { success = true, message = "התשלום אושר בהצלחה! כעת מתבצע עדכון עגלת הקניות." });
+        //        }
+        //        else
+        //        {
+        //            return Json(new { success = false, message = "שגיאה בפרטי התשלום." });
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine($"ProcessPaypalPayment Error: {ex.Message}");
+        //        return Json(new { success = false, message = $"שגיאה: {ex.Message}" });
+        //    }
+        //}
+
+
+
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public ActionResult UpdateCartAfterPayment(string orderId)
+        //{
+        //    try
+        //    {
+        //        // שליפת משתמש מחובר
+        //        var userId = GetLoggedInUserId();
+        //        if (userId <= 0)
+        //        {
+        //            return Json(new { success = false, message = "משתמש לא מחובר." });
+        //        }
+
+        //        // שליפת עגלת הקניות
+        //        var cartItems = db.CartItems.Include(c => c.Book).Where(c => c.UserId == userId).ToList();
+        //        if (!cartItems.Any())
+        //        {
+        //            return Json(new { success = false, message = "עגלת הקניות ריקה." });
+        //        }
+
+        //        foreach (var item in cartItems)
+        //        {
+        //            // הוספה לטבלאות רכישות/השאלות
+        //            if (item.TransactionType == "buy")
+        //            {
+        //                db.Purchases.Add(new Purchase
+        //                {
+        //                    UserId = userId,
+        //                    BookId = item.BookId,
+        //                    PurchasePrice = item.Book.PriceBuy,
+        //                    PurchaseDate = DateTime.Now
+        //                });
+        //            }
+        //            else if (item.TransactionType == "borrow")
+        //            {
+        //                db.Borrows.Add(new Borrow
+        //                {
+        //                    UserId = userId,
+        //                    BookId = item.BookId,
+        //                    BorrowDate = DateTime.Now,
+        //                    DueDate = DateTime.Now.AddDays(30),
+        //                    IsReturned = false
+        //                });
+        //            }
+
+        //            // עדכון עותקים זמינים
+        //            var book = db.Books.FirstOrDefault(b => b.BookId == item.BookId);
+        //            if (book != null)
+        //            {
+        //                book.AvailableCopies--;
+        //            }
+
+        //            // שמירת תשלום
+        //            db.Payments.Add(new Payment
+        //            {
+        //                UserId = userId,
+        //                BookId = item.BookId,
+        //                Amount = item.TransactionType == "buy" ? item.Book.PriceBuy : item.Book.PriceBorrow,
+        //                PaymentMethod = "PayPal",
+        //                PaymentDate = DateTime.Now
+        //            });
+        //        }
+
+        //        // מחיקת עגלת הקניות
+        //        db.CartItems.RemoveRange(cartItems);
+
+        //        // שמירת השינויים
+        //        db.SaveChanges();
+
+        //        return Json(new { success = true, message = "התשלום הושלם בהצלחה ועגלת הקניות נוקתה!" });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine($"UpdateCartAfterPayment Error: {ex.Message}");
+        //        return Json(new { success = false, message = $"שגיאה: {ex.Message}" });
+        //    }
+        //}
 
 
 
 
+        [HttpGet]
+        public ActionResult FinalizePayment()
+        {
+            try
+            {
+                var userId = GetLoggedInUserId();
 
+                if (userId <= 0)
+                {
+                    TempData["Error"] = "משתמש לא מחובר.";
+                    return RedirectToAction("Login", "Account");
+                }
 
+                // שליפת כל הפריטים בעגלה של המשתמש
+                var cartItems = db.CartItems.Include(c => c.Book).Where(c => c.UserId == userId).ToList();
 
+                if (!cartItems.Any())
+                {
+                    TempData["Error"] = "עגלת הקניות ריקה.";
+                    return RedirectToAction("Index", "CartItems");
+                }
 
+                foreach (var item in cartItems)
+                {
+                    // הוספה לטבלאות רכישות או השאלות
+                    if (item.TransactionType == "buy")
+                    {
+                        db.Purchases.Add(new Purchase
+                        {
+                            UserId = userId,
+                            BookId = item.BookId,
+                            PurchasePrice = item.Book.PriceBuy,
+                            PurchaseDate = DateTime.Now
+                        });
+                    }
+                    else if (item.TransactionType == "borrow")
+                    {
+                        db.Borrows.Add(new Borrow
+                        {
+                            UserId = userId,
+                            BookId = item.BookId,
+                            BorrowDate = DateTime.Now,
+                            DueDate = DateTime.Now.AddDays(30),
+                            IsReturned = false
+                        });
+                    }
 
+                    // עדכון עותקים זמינים
+                    var book = db.Books.FirstOrDefault(b => b.BookId == item.BookId);
+                    if (book != null)
+                    {
+                        book.AvailableCopies--;
+                    }
+
+                    // שמירת תשלום
+                    db.Payments.Add(new Payment
+                    {
+                        UserId = userId,
+                        BookId = item.BookId,
+                        Amount = item.TransactionType == "buy" ? item.Book.PriceBuy : item.Book.PriceBorrow,
+                        PaymentMethod = "PayPal",
+                        PaymentDate = DateTime.Now
+                    });
+                }
+
+                // מחיקת כל הפריטים מהעגלה
+                db.CartItems.RemoveRange(cartItems);
+
+                // שמירה של כל השינויים במסד הנתונים
+                db.SaveChanges();
+
+                TempData["Success"] = "התשלום הושלם בהצלחה! הספרים נוספו לרשומות שלך.";
+                return RedirectToAction("Index", "Books");
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"שגיאה בתהליך התשלום: {ex.Message}";
+                return RedirectToAction("Index", "CartItems");
+            }
+        }
 
 
 

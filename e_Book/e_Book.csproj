@@ -130,7 +130,7 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Helpers\PayPalConfiguration.cs" />
+    <Compile Include="Helpers\PayPalService.cs" />
     <Compile Include="Migrations\202412051757174_InitialCreate.cs" />
     <Compile Include="Migrations\202412051757174_InitialCreate.designer.cs">
       <DependentUpon>202412051757174_InitialCreate.cs</DependentUpon>
@@ -297,6 +297,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Views\PayPalWebhook\" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Migrations\202412051757174_InitialCreate.resx">

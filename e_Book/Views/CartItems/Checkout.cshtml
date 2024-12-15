@@ -43,15 +43,14 @@
             </tr>
         }
     </tbody>
-
 </table>
 
-<!-- הצגת סה\"כ כלל -->
-<h3>סה\"כ לתשלום: @string.Format("{0:C}", grandTotal)</h3>
+<!-- הצגת סה"כ לתשלום -->
+<h3>סה"כ לתשלום: @string.Format("{0:C}", grandTotal)</h3>
 
-<!-- טופס תשלום -->
-<form method="post" id="paymentForm" action="@Url.Action("ProcessPayment", "CartItems")">
-    @Html.AntiForgeryToken()
+<!-- אפשרויות תשלום -->
+<div>
+    <h4>בחר אפשרות תשלום:</h4>
     <div class="form-check">
         <input class="form-check-input" type="radio" name="paymentMethod" id="creditCardOption" value="creditCard" checked>
         <label class="form-check-label" for="creditCardOption">תשלום באמצעות כרטיס אשראי</label>
@@ -60,53 +59,108 @@
         <input class="form-check-input" type="radio" name="paymentMethod" id="paypalOption" value="paypal">
         <label class="form-check-label" for="paypalOption">תשלום באמצעות PayPal</label>
     </div>
+</div>
 
-    <!-- פרטי כרטיס אשראי -->
-    <div id="creditCardForm">
+<!-- פרטי כרטיס אשראי -->
+<div id="creditCardForm">
+    <form method="post" id="paymentForm" action="@Url.Action("ProcessPayment", "CartItems")">
+        @Html.AntiForgeryToken()
         <div class="form-group">
             <label for="cardNumber">מספר כרטיס אשראי</label>
-            <input type="text" class="form-control" id="cardNumber" name="cardNumber" required>
+            <input type="text" class="form-control" id="cardNumber" name="cardNumber"
+                   maxlength="16" minlength="16" pattern="\d{16}"
+                   title="מספר כרטיס אשראי חייב להיות עם 16 ספרות" required>
         </div>
         <div class="form-group">
             <label for="expiryDate">תאריך תפוגה</label>
-            <input type="text" class="form-control" id="expiryDate" name="expiryDate" placeholder="MM/YY" required>
+            <input type="text" class="form-control" id="expiryDate" name="expiryDate"
+                   placeholder="MM/YY" pattern="(0[1-9]|1[0-2])\/[0-9]{2}"
+                   title="תוקף חייב להיות בפורמט MM/YY" required>
         </div>
         <div class="form-group">
             <label for="cvv">CVV</label>
-            <input type="text" class="form-control" id="cvv" name="cvv" required>
+            <input type="text" class="form-control" id="cvv" name="cvv"
+                   maxlength="3" minlength="3" pattern="\d{3}"
+                   title="CVV חייב להיות בן 3 ספרות" required>
         </div>
-    </div>
+        <input type="hidden" name="totalAmount" value="@grandTotal" />
+        <button type="submit" id="creditCardButton" class="btn btn-primary">בצע תשלום</button>
+    </form>
+</div>
 
-    <!-- כפתור ל-PayPal -->
-    <div id="paypalButton" style="display: none;">
-        <button type="submit" class="btn btn-warning">המשך ל-PayPal</button>
-    </div>
+<script>
+    document.getElementById("paymentForm").addEventListener("submit", function (event) {
+        const expiryDateInput = document.getElementById("expiryDate").value;
+        const currentDate = new Date();
+        const expiryParts = expiryDateInput.split("/");
 
-    <input type="hidden" name="totalAmount" value="@grandTotal" />
+        if (expiryParts.length === 2) {
+            const expiryMonth = parseInt(expiryParts[0], 10);
+            const expiryYear = parseInt("20" + expiryParts[1], 10);
 
-    <button type="submit" id="creditCardButton" class="btn btn-primary">בצע תשלום</button>
-</form>
+            const expiryDate = new Date(expiryYear, expiryMonth - 1, 1);
 
+            if (expiryDate < currentDate) {
+                alert("תאריך התפוגה כבר עבר. אנא הזן תאריך תקף.");
+                event.preventDefault();
+                return;
+            }
+        } else {
+            alert("אנא הזן תאריך תפוגה בפורמט MM/YY.");
+            event.preventDefault();
+            return;
+        }
+    });
+</script>
+
+
+<!-- כפתור PayPal -->
+<div id="paypal-button-container" style="display: none;"></div>
+
+<script src="https://www.paypal.com/sdk/js?client-id=AV07agdETsFziujySh2ev5Qe4w2fcbldMFjHxTeE47E4e-IbR0hRU_2lCSVWmgTDZOtphmQ-ceYFlCuN&currency=ILS"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const creditCardForm = document.getElementById("creditCardForm");
-        const paypalButton = document.getElementById("paypalButton");
-        const creditCardButton = document.getElementById("creditCardButton");
+        const paypalButtonContainer = document.getElementById("paypal-button-container");
 
+        // הצגת כפתור PayPal או טופס כרטיס אשראי לפי בחירה
         document.getElementById("paypalOption").addEventListener("change", function () {
             if (this.checked) {
                 creditCardForm.style.display = "none";
-                creditCardButton.style.display = "none";
-                paypalButton.style.display = "block";
+                paypalButtonContainer.style.display = "block";
             }
         });
 
         document.getElementById("creditCardOption").addEventListener("change", function () {
             if (this.checked) {
                 creditCardForm.style.display = "block";
-                creditCardButton.style.display = "block";
-                paypalButton.style.display = "none";
+                paypalButtonContainer.style.display = "none";
             }
         });
+
+        // הטמעת כפתור PayPal
+        paypal.Buttons({
+            createOrder: function (data, actions) {
+                return actions.order.create({
+                    purchase_units: [{
+                        amount: {
+                            value: '@grandTotal',
+                            currency_code: 'ILS'
+                        }
+                    }]
+                });
+            },
+            onApprove: function (data, actions) {
+                return actions.order.capture().then(function (details) {
+                    alert('התשלום בוצע בהצלחה!');
+
+                    // מעבר לעמוד עדכון נתוני העגלה ומסד הנתונים
+                    window.location.href = '@Url.Action("FinalizePayment", "CartItems")';
+                });
+            },
+            onError: function (err) {
+                alert('שגיאה בתהליך התשלום: ' + err);
+            }
+        }).render('#paypal-button-container');
     });
 </script>
