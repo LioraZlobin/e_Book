@@ -61,9 +61,16 @@ namespace e_Book.Controllers
             return View();
         }
 
-        //[Authorize(Roles = "Admin")]
         public ActionResult AdminDashboard()
         {
+            var userCount = db.Users.Count();
+            var totalPurchases = db.Purchases.Count();
+            var totalBorrows = db.Borrows.Count();
+
+            ViewBag.UserCount = userCount;
+            ViewBag.TotalPurchases = totalPurchases;
+            ViewBag.TotalBorrows = totalBorrows;
+
             return View();
         }
 

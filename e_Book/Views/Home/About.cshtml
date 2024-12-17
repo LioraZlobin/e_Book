@@ -1,7 +1,59 @@
 ﻿@{
     ViewBag.Title = "About";
 }
-<h2>@ViewBag.Title.</h2>
-<h3>@ViewBag.Message</h3>
 
-<p>Use this area to provide additional information.</p>
+<div class="container">
+    <h1 class="mt-4 mb-4 text-primary">אודות הספרייה</h1>
+   
+
+    <!-- מידע על הספרייה -->
+    <section>
+        <h3 class="text-secondary text-right">חזון והיסטוריה</h3>
+        <p class="text-right">
+            ספריית <strong>eBook Library Service</strong> הוקמה בשנת 2023 במטרה להנגיש ספרים דיגיטליים ופיזיים לקהל רחב של משתמשים.
+            הספרייה הוקמה על ידי קהילת מפתחים ואוהבי ספרים שרצו להציע שירותי קריאה נוחים, מהירים וזמינים.
+        </p>
+        <p class="text-right">
+            החזון שלנו הוא לאפשר לכל אדם למצוא את הספרים שהוא אוהב ולהעשיר את חוויית הקריאה הדיגיטלית והמודרנית,
+            תוך דגש על שירות מהיר וחוויית משתמש מתקדמת.
+        </p>
+    </section>
+    <hr />
+    <section>
+        <h3 class="text-secondary text-right">השירותים שלנו</h3>
+        <ul class="list-unstyled text-right">
+            <li>📚 <strong>השאלה ורכישת ספרים:</strong> אפשרות לרכוש ספרים או להשאיל אותם באופן דיגיטלי.</li>
+            <li>🔍 <strong>רשימות המתנה:</strong> במידה ואין עותקים זמינים, ניתן להיכנס לרשימת המתנה.</li>
+            <li>🌐 <strong>גישה דיגיטלית:</strong> קריאת ספרים בצורה דיגיטלית מכל מכשיר ובכל מקום.</li>
+            <li>⭐ <strong>המלצות ספרים:</strong> מערכת המלצות מתקדמת לפי תחומי עניין.</li>
+        </ul>
+    </section>
+
+
+    <hr />
+
+    <!-- סטטיסטיקות הספרייה -->
+    <section>
+        <h3 class="text-secondary">סטטיסטיקות</h3>
+        <div class="row text-center">
+            <div class="col-md-4">
+                <div class="card shadow-sm p-3 mb-4">
+                    <h5>📖 מספר הספרים</h5>
+                    <p class="display-4">@ViewBag.TotalBooks</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm p-3 mb-4">
+                    <h5>👥 משתמשים פעילים</h5>
+                    <p class="display-4">@ViewBag.ActiveUsers</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm p-3 mb-4">
+                    <h5>📦 השאלות ורכישות</h5>
+                    <p class="display-4">@ViewBag.TotalTransactions</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

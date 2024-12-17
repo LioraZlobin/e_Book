@@ -14,7 +14,11 @@
     </div>
 </div>
 
-<!-- הודעות שגיאה או הצלחה -->
+<!-- הודעות שגיאה , הצלחה ומידע -->
+@if (TempData["Info"] != null)
+{
+    <div class="alert alert-info" id="message-box">@TempData["Info"]</div>
+}
 @if (TempData["Error"] != null)
 {
     <div class="alert alert-danger" id="message-box">@TempData["Error"]</div>
@@ -39,7 +43,7 @@
 
 
 <p>
-    @Html.ActionLink("Create New", "Create")
+    @Html.ActionLink("הוספת ספר חדש", "Create")
 </p>
 
 <div class="container">
@@ -54,24 +58,26 @@
                         <p class="card-text">
                             <strong>מחבר:</strong> @item.Author<br />
                             <strong>הוצאה:</strong> @item.Publisher<br />
+                            <strong>הגבלת גיל:</strong> @item.AgeRestriction<br />
                             <strong>מחיר קנייה:</strong>
                             @if (item.PreviousPrice.HasValue && item.DiscountEndDate.HasValue && item.DiscountEndDate > DateTime.Now)
                             {
-                        <span style="text-decoration: line-through; color: red;">
-                            @item.PreviousPrice.Value.ToString("C")
-                        </span>
-                                            <span style="font-weight: bold; color: green;">
-                                                @item.PriceBuy.ToString("C")
-                                            </span> }
-                                                            else
-                                                            {
-                                            <span>@item.PriceBuy.ToString("C")</span>}
+                                <span style="text-decoration: line-through; color: red;">
+                                    @item.PreviousPrice.Value.ToString("C")
+                                </span>
+                                <span style="font-weight: bold; color: green;">
+                                    @item.PriceBuy.ToString("C")
+                                </span> }
+                            else
+                            {
+                                <span>@item.PriceBuy.ToString("C")</span>}
                             <br />
                             @if (item.IsBorrowable)
                             {
                                 <strong>מחיר השאלה:</strong> @item.PriceBorrow.ToString("C")<br />
+                                <strong>עותקים זמינים:</strong> @item.AvailableCopies<br />
                             }
-                            <strong>עותקים זמינים:</strong> @item.AvailableCopies<br />
+
                         </p>
                         <div class="d-flex justify-content-between">
                             @Html.ActionLink("Edit", "Edit", new { id = item.BookId }, new { @class = "btn btn-secondary btn-sm" })
@@ -80,10 +86,60 @@
                         </div>
                         <form action="@Url.Action("AddToCart", "CartItems", new { bookId = item.BookId })" method="post" class="mt-2">
                             @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-primary btn-sm w-100">
-                                הוסף לעגלת הקניות
-                            </button>
+
+                            @{
+                                // המרת המחרוזת של הגבלת הגיל למספר שלם
+                                int requiredAge = 0; // ברירת מחדל אם אין הגבלת גיל
+                                if (!string.IsNullOrEmpty(item.AgeRestriction) && item.AgeRestriction != "All Ages")
+                                {
+                                    int.TryParse(item.AgeRestriction.Replace("+", ""), out requiredAge);
+                                }
+
+                                // בדיקה אם המשתמש לא עומד בהגבלת הגיל
+                                bool isAgeRestricted = requiredAge > 0 && ViewBag.UserAge < requiredAge;
+                            }
+
+                            @if (isAgeRestricted)
+                            {
+                                <!-- כפתור חסום במקרה שהמשתמש לא עומד בהגבלת הגיל -->
+                                <button type="button" class="btn btn-secondary btn-sm w-100" disabled>
+                                    אינך עומד בהגבלת הגיל
+                                </button>
+                            }
+                            else
+                            {
+                                <!-- ספרים שלא ניתנים להשאלה -->
+                                if (!item.IsBorrowable)
+                                {
+                                    <div class="mb-2">
+                                        <label>בחר סוג עסקה:</label>
+                                        <select name="transactionType" class="form-control" style="width: 60%;" required>
+                                            <option value="buy">קנייה</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                                        הוסף לעגלת הקניות
+                                    </button>
+                                }
+                                else
+                                {
+                                    <!-- ספרים שניתנים להשאלה וגם לרכישה -->
+                                    <div class="mb-2">
+                                        <label>בחר סוג עסקה:</label>
+                                        <select name="transactionType" class="form-control" style="width: 60%;" required>
+                                            <option value="buy">קנייה</option>
+                                            <option value="borrow">השאלה</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                                        הוסף לעגלת הקניות
+                                    </button>
+                                }
+                            }
                         </form>
+
+
+
                     </div>
 
                 </div>

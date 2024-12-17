@@ -20,8 +20,29 @@ namespace e_Book.Controllers
         [AllowAnonymous]
         public ActionResult Index()
         {
-            //ViewBag.Role = GetUserRole(); // שליפת התפקיד
+            var userId = GetLoggedInUserId();
+
+            if (userId > 0)
+            {
+                var user = db.Users.FirstOrDefault(u => u.UserId == userId);
+                if (user != null)
+                {
+                    ViewBag.UserAge = user.Age; // הגיל של המשתמש
+                }
+            }
+            else
+            {
+                ViewBag.UserAge = 0; // משתמש לא מחובר
+            }
             return View(db.Books.ToList());
+        }
+
+
+        private int GetLoggedInUserId()
+        {
+            var userEmail = User.Identity.Name; // משתמש מחובר לפי ה-Email
+            var user = db.Users.FirstOrDefault(u => u.Email == userEmail);
+            return user?.UserId ?? 0; // אם המשתמש לא נמצא, נחזיר 0
         }
 
 

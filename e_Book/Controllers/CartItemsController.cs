@@ -17,7 +17,7 @@ namespace e_Book.Controllers
     public class CartItemsController : Controller
     {
         private LibraryDbContext db = new LibraryDbContext();
-        private readonly EmailService _emailService= new EmailService();
+        private readonly EmailService _emailService = new EmailService();
 
         // GET: CartItems
         public ActionResult Index()
@@ -202,7 +202,7 @@ namespace e_Book.Controllers
         // הוספת ספר לעגלה
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult AddToCart(int bookId)
+        public ActionResult AddToCart(int bookId, string transactionType)
         {
             var userId = GetLoggedInUserId();
 
@@ -213,6 +213,7 @@ namespace e_Book.Controllers
             }
 
             var book = db.Books.FirstOrDefault(b => b.BookId == bookId);
+            var user = db.Users.FirstOrDefault(u => u.UserId == userId);
 
             if (book == null)
             {
@@ -220,48 +221,78 @@ namespace e_Book.Controllers
                 return RedirectToAction("Index", "Books");
             }
 
-            if (book.AvailableCopies <= 0)
-            {
-                // הוספת המשתמש לרשימת המתנה אם אין עותקים זמינים
-                var waitingUser = new WaitingList
-                {
-                    UserId = userId,
-                    BookId = bookId,
-                    AddedDate = DateTime.Now
-                };
-
-                db.WaitingLists.Add(waitingUser);
-                db.SaveChanges();
-
-                TempData["Error"] = "אין עותקים זמינים לספר. נוספת לרשימת ההמתנה.";
-                return RedirectToAction("Index", "Books");
-            }
+            //// בדיקה של הגבלת גיל מול גיל המשתמש
+            //int userAge = DateTime.Now.Year - user.Age; // חישוב גיל המשתמש
+            //if (!string.IsNullOrEmpty(book.AgeRestriction) && book.AgeRestriction != "All Ages")
+            //{
+            //    int requiredAge = int.Parse(book.AgeRestriction.Replace("+", ""));
+            //    if (userAge < requiredAge)
+            //    {
+            //        TempData["Error"] = $"אינך עומד בהגבלת הגיל של הספר '{book.Title}'. הגיל המינימלי הנדרש הוא {requiredAge}.";
+            //        return RedirectToAction("Index", "Books");
+            //    }
+            //}
 
             // בדיקה אם הספר כבר בעגלה
             var existingItem = db.CartItems.FirstOrDefault(c => c.UserId == userId && c.BookId == bookId);
-
             if (existingItem != null)
             {
                 TempData["Error"] = "הספר כבר נמצא בעגלת הקניות שלך.";
                 return RedirectToAction("Index", "Books");
             }
 
-            // הוספת הספר לעגלה ללא שינוי במלאי
-            var newItem = new CartItem
+            // השאלה עם בדיקת עותקים זמינים
+            if (transactionType == "borrow")
             {
-                UserId = userId,
-                BookId = bookId,
-                Quantity = 1,
-                TransactionType = "buy" // או "borrow" בהתאם לספר
-            };
+                if (book.IsBorrowable)
+                {
+                    if (book.AvailableCopies > 0)
+                    {
+                        // הוספת השאלה לעגלה
+                        db.CartItems.Add(new CartItem
+                        {
+                            UserId = userId,
+                            BookId = bookId,
+                            Quantity = 1,
+                            TransactionType = "borrow"
+                        });
+                        db.SaveChanges();
+                        TempData["Success"] = $"הספר '{book.Title}' נוסף לעגלה להשאלה.";
+                    }
+                    else
+                    {
+                        // הוספת לרשימת המתנה
+                        db.WaitingLists.Add(new WaitingList
+                        {
+                            UserId = userId,
+                            BookId = bookId,
+                            AddedDate = DateTime.Now
+                        });
+                        db.SaveChanges();
+                        TempData["Info"] = $"הספר '{book.Title}' אינו זמין להשאלה כרגע ונוספת לרשימת ההמתנה.";
+                    }
+                }
+                else
+                {
+                    TempData["Error"] = $"הספר '{book.Title}' אינו ניתן להשאלה.";
+                }
+            }
+            else if (transactionType == "buy")
+            {
+                // הוספת רכישה ללא תלות במלאי
+                db.CartItems.Add(new CartItem
+                {
+                    UserId = userId,
+                    BookId = bookId,
+                    Quantity = 1,
+                    TransactionType = "buy"
+                });
+                db.SaveChanges();
+                TempData["Success"] = $"הספר '{book.Title}' נוסף לעגלה לרכישה.";
+            }
 
-            db.CartItems.Add(newItem);
-            db.SaveChanges();
-
-            TempData["Success"] = "הספר נוסף לעגלת הקניות בהצלחה!";
             return RedirectToAction("Index", "Books");
         }
-
 
 
 
@@ -337,6 +368,15 @@ namespace e_Book.Controllers
                 // שמירת השאלה או רכישה
                 if (item.TransactionType == "borrow")
                 {
+
+                    // בדיקת מגבלת 3 השאלות
+                    var activeBorrowsCount = db.Borrows.Count(b => b.UserId == userId && !b.IsReturned);
+                    if (activeBorrowsCount >= 3)
+                    {
+                        TempData["Error"] = "לא ניתן להשאיל יותר מ-3 ספרים בו-זמנית.";
+                        return RedirectToAction("Index", "CartItems");
+                    }
+
                     var borrow = new Borrow
                     {
                         UserId = userId,
@@ -361,8 +401,12 @@ namespace e_Book.Controllers
                     totalAmount += book.PriceBuy * item.Quantity; // סכום כולל לרכישה
                 }
 
-                // עדכון מלאי
-                book.AvailableCopies -= item.Quantity;
+                if (item.TransactionType == "borrow")
+                {
+                    // עדכון מלאי
+                    book.AvailableCopies--;
+                }
+
             }
 
             // מחיקת כל הפריטים מהעגלה
@@ -374,38 +418,40 @@ namespace e_Book.Controllers
             if (user != null && !string.IsNullOrEmpty(user.Email))
             {
                 string subject = "תשלום הושלם בהצלחה";
-                StringBuilder body = new StringBuilder();
-                body.AppendLine($"שלום {user.Name},<br/><br/>");
-                body.AppendLine("תודה על רכישתך/השאלתך בספרייה. להלן פרטי ההזמנה שלך:<br/><br/>");
+                string body = $@"
+                     <div dir='rtl' style='text-align:right; font-family:Arial, sans-serif;'>
+                            <h2>תשלום הושלם בהצלחה</h2>
+                            <p>שלום {user.Name},</p>
+                            <p>תודה על רכישתך/השאלתך בספרייה. להלן פרטי ההזמנה שלך:</p>
+                            <ul>";
 
                 foreach (var item in cartItems)
                 {
-                    var book = db.Books.Find(item.BookId); // שליפת הספר באופן ידני
+                    var book = db.Books.Find(item.BookId);
                     if (book != null)
                     {
-                        body.AppendLine($"<strong>שם הספר:</strong> {book.Title}, ");
-                        body.AppendLine($"<strong>סוג העסקה:</strong> {(item.TransactionType == "buy" ? "רכישה" : "השאלה")}, ");
-                        body.AppendLine($"<strong>כמות:</strong> {item.Quantity}, ");
-                        body.AppendLine($"<strong>סכום:</strong> {(item.TransactionType == "buy" ? book.PriceBuy : book.PriceBorrow).ToString("C")}<br/>");
-                    }
-                    else
-                    {
-                        body.AppendLine($"<strong>שם הספר:</strong> ספר לא נמצא.<br/>");
+                        body += $@"
+                    <li>
+                        <strong>שם הספר:</strong> {book.Title}<br/>
+                        <strong>סוג העסקה:</strong> {(item.TransactionType == "buy" ? "רכישה" : "השאלה")}<br/>
+                        <strong>כמות:</strong> {item.Quantity}<br/>
+                        <strong>סכום:</strong> {(item.TransactionType == "buy" ? book.PriceBuy : book.PriceBorrow).ToString("C")}
+                    </li>";
                     }
                 }
 
+                body += $@"
+                    </ul>
+                    <p><strong>סה&quot;כ לתשלום:</strong> {totalAmount.ToString("C")}</p>
+                    <p>תודה,<br/>צוות הספרייה</p>
+                 </div>";
 
-                body.AppendLine($"<br/><strong>סה\"כ לתשלום:</strong> {totalAmount.ToString("C")}<br/><br/>");
-                body.AppendLine("תודה,<br/>צוות הספרייה.");
-
-                // שליחת המייל
-                _emailService.SendEmail(user.Email, subject, body.ToString());
+                _emailService.SendEmail(user.Email, subject, body);
             }
 
             TempData["Success"] = "התשלום הושלם בהצלחה! הספרים נוספו לרשומות שלך.";
             return RedirectToAction("Index", "Books");
         }
-
 
 
         [HttpPost]
@@ -417,34 +463,17 @@ namespace e_Book.Controllers
             if (cartItem == null)
             {
                 TempData["Error"] = "הפריט לא נמצא בעגלת הקניות.";
-                return RedirectToAction("Index", "CartItems");
+                return RedirectToAction("Index");
             }
 
-            // שמירת המידע על הספר והמשתמש
             var book = cartItem.Book;
-            var userId = cartItem.UserId;
-
-            // הסרת הפריט מהעגלה
             db.CartItems.Remove(cartItem);
 
-            // בדיקה אם המשתמש הגיע מרשימת המתנה
-            var waitingUser = db.WaitingLists
-                                .Where(w => w.BookId == book.BookId)
-                                .OrderBy(w => w.Position) // לפי המיקום בתור
-                                .FirstOrDefault(w => w.UserId == userId);
-
-            // אם המשתמש קיבל את הספר מתוך רשימת המתנה
-            if (waitingUser != null)
-            {
-                // הסרת המשתמש מרשימת ההמתנה
-                db.WaitingLists.Remove(waitingUser);
-            }
-
             db.SaveChanges();
-
             TempData["Success"] = "הפריט הוסר מהעגלה.";
-            return RedirectToAction("Index", "CartItems");
+            return RedirectToAction("Index");
         }
+
 
 
         [HttpGet]
@@ -495,6 +524,15 @@ namespace e_Book.Controllers
                     }
                     else if (item.TransactionType == "borrow")
                     {
+
+                        // בדיקת מגבלת 3 השאלות
+                        var activeBorrowsCount = db.Borrows.Count(b => b.UserId == userId && !b.IsReturned);
+                        if (activeBorrowsCount >= 3)
+                        {
+                            TempData["Error"] = "לא ניתן להשאיל יותר מ-3 ספרים בו-זמנית.";
+                            return RedirectToAction("Index", "CartItems");
+                        }
+
                         db.Borrows.Add(new Borrow
                         {
                             UserId = userId,
@@ -507,8 +545,11 @@ namespace e_Book.Controllers
                         totalAmount += book.PriceBorrow * item.Quantity; // סכום כולל להשאלה
                     }
 
-                    // עדכון עותקים זמינים
-                    book.AvailableCopies -= item.Quantity;
+                    if (item.TransactionType == "borrow")
+                    {
+                        // עדכון מלאי
+                        book.AvailableCopies--;
+                    }
 
                     // שמירת תשלום
                     db.Payments.Add(new Payment
@@ -532,32 +573,35 @@ namespace e_Book.Controllers
                 if (user != null && !string.IsNullOrEmpty(user.Email))
                 {
                     string subject = "תשלום הושלם בהצלחה";
-                    StringBuilder body = new StringBuilder();
-                    body.AppendLine($"שלום {user.Name},<br/><br/>");
-                    body.AppendLine("תודה על רכישתך/השאלתך בספרייה. להלן פרטי ההזמנה שלך:<br/><br/>");
+                    string body = $@"
+                     <div dir='rtl' style='text-align:right; font-family:Arial, sans-serif;'>
+                            <h2>תשלום הושלם בהצלחה</h2>
+                            <p>שלום {user.Name},</p>
+                            <p>תודה על רכישתך/השאלתך בספרייה. להלן פרטי ההזמנה שלך:</p>
+                            <ul>";
 
                     foreach (var item in cartItems)
                     {
-                        var book = db.Books.Find(item.BookId); // שליפת הספר באופן ידני
+                        var book = db.Books.Find(item.BookId);
                         if (book != null)
                         {
-                            body.AppendLine($"<strong>שם הספר:</strong> {book.Title}, ");
-                            body.AppendLine($"<strong>סוג העסקה:</strong> {(item.TransactionType == "buy" ? "רכישה" : "השאלה")}, ");
-                            body.AppendLine($"<strong>כמות:</strong> {item.Quantity}, ");
-                            body.AppendLine($"<strong>סכום:</strong> {(item.TransactionType == "buy" ? book.PriceBuy : book.PriceBorrow).ToString("C")}<br/>");
-                        }
-                        else
-                        {
-                            body.AppendLine($"<strong>שם הספר:</strong> ספר לא נמצא.<br/>");
+                            body += $@"
+                    <li>
+                        <strong>שם הספר:</strong> {book.Title}<br/>
+                        <strong>סוג העסקה:</strong> {(item.TransactionType == "buy" ? "רכישה" : "השאלה")}<br/>
+                        <strong>כמות:</strong> {item.Quantity}<br/>
+                        <strong>סכום:</strong> {(item.TransactionType == "buy" ? book.PriceBuy : book.PriceBorrow).ToString("C")}
+                    </li>";
                         }
                     }
 
+                    body += $@"
+                    </ul>
+                    <p><strong>סה&quot;כ לתשלום:</strong> {totalAmount.ToString("C")}</p>
+                    <p>תודה,<br/>צוות הספרייה</p>
+                 </div>";
 
-                    body.AppendLine($"<br/><strong>סה\"כ לתשלום:</strong> {totalAmount.ToString("C")}<br/><br/>");
-                    body.AppendLine("תודה,<br/>צוות הספרייה.");
-
-                    // שליחת המייל
-                    _emailService.SendEmail(user.Email, subject, body.ToString());
+                    _emailService.SendEmail(user.Email, subject, body);
                 }
 
                 TempData["Success"] = "התשלום הושלם בהצלחה! הספרים נוספו לרשומות שלך.";

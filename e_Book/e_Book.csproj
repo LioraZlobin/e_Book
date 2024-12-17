@@ -325,7 +325,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Views\PayPalWebhook\" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Migrations\202412051757174_InitialCreate.resx">

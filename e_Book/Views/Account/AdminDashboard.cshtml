@@ -1,11 +1,61 @@
 ﻿@{
-    ViewBag.Title = "Admin Dashboard";
+    ViewBag.Title = "ממשק מנהל";
 }
 
-<h3>ברוך הבא, מנהל מערכת!</h3>
+<div class="container mt-5">
+    <!-- כותרת -->
+    <h2 class="text-center mb-4 text-primary">ברוך הבא, מנהל המערכת!</h2>
 
-<p>בחר פעולה:</p>
-<ul>
-    <li>@Html.ActionLink("ניהול ספרים", "Index", "Books")</li>
-    <li>@Html.ActionLink("ניהול משתמשים", "Index", "Users")</li>
-</ul>
+    <!-- שורות כרטיסים -->
+    <div class="row justify-content-center">
+        <!-- כרטיס למספר המשתמשים -->
+        <div class="col-md-4 mb-3">
+            <div class="card text-white bg-info shadow">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x mb-3"></i>
+                    <h4>מספר משתמשים</h4>
+                    <h2>@ViewBag.UserCount</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- כרטיס למספר ההשאלות -->
+        <div class="col-md-4 mb-3">
+            <div class="card text-white bg-warning shadow">
+                <div class="card-body text-center">
+                    <i class="fas fa-book-reader fa-3x mb-3"></i>
+                    <h4>מספר השאלות</h4>
+                    <h2>@ViewBag.TotalBorrows</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- כרטיס למספר הקניות -->
+        <div class="col-md-4 mb-3">
+            <div class="card text-white bg-success shadow">
+                <div class="card-body text-center">
+                    <i class="fas fa-shopping-cart fa-3x mb-3"></i>
+                    <h4>מספר קניות</h4>
+                    <h2>@ViewBag.TotalPurchases</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- קישורים לפעולות -->
+    <div class="text-center mt-4">
+        <h4>בחר פעולה:</h4>
+        <ul class="list-unstyled">
+            <li>
+                <a href="@Url.Action("Index", "Books")" class="btn btn-primary btn-lg m-2">
+                    ניהול ספרים
+                </a>
+            </li>
+            <li>
+                <a href="@Url.Action("Index", "Users")" class="btn btn-secondary btn-lg m-2">
+                    ניהול משתמשים
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>

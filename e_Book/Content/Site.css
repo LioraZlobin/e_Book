@@ -64,27 +64,27 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.table th {
-    background-color: #4CAF50;
-    color: white;
-    font-weight: bold;
-    padding: 15px;
-    text-align: left;
-    text-transform: uppercase;
-}
+    .table th {
+        background-color: #4CAF50;
+        color: white;
+        font-weight: bold;
+        padding: 15px;
+        text-align: left;
+        text-transform: uppercase;
+    }
 
-.table td {
-    padding: 12px;
-    text-align: left;
-}
+    .table td {
+        padding: 12px;
+        text-align: left;
+    }
 
-.table tr:nth-child(even) {
-    background-color: #f9f9f9;
-}
+    .table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
 
-.table tr:hover {
-    background-color: #f1f1f1;
-}
+    .table tr:hover {
+        background-color: #f1f1f1;
+    }
 
 /* כפתורים */
 button,
@@ -102,11 +102,11 @@ a.btn {
     transition: background-color 0.3s, transform 0.2s;
 }
 
-button:hover,
-a.btn:hover {
-    background-color: #45a049;
-    transform: scale(1.05);
-}
+    button:hover,
+    a.btn:hover {
+        background-color: #45a049;
+        transform: scale(1.05);
+    }
 
 .filter-btn {
     background-color: #ff99cc !important; /* ורוד כהה */
@@ -228,6 +228,24 @@ form button {
         transform: scale(1.05); /* אנימציה קטנה */
     }
 
+.card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* יישור אחיד לתוכן ולכפתורים */
+    height: 100%; /* גובה אחיד לכל הכרטיסים */
+}
+
+.card-body {
+    flex-grow: 1; /* דואג שהתוכן ייקח מקום מתאים */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+    .card-body .d-flex {
+        margin-top: auto; /* הכפתורים תמיד בתחתית הכרטיס */
+    }
+
 /* עיצוב לפוטר */
 footer {
     background-color: #333;
@@ -238,3 +256,181 @@ footer {
     margin-top: 20px;
     border-top: 3px solid #d0006f; /* הדגשת קו */
 }
+
+h1, h3 {
+    color: #7B2CBF;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+}
+
+    .card h5 {
+        color: #555;
+    }
+
+    .card p {
+        font-weight: bold;
+        color: #333;
+    }
+
+
+body {
+    direction: rtl;
+    text-align: right;
+    font-family: Arial, sans-serif;
+}
+
+.navbar {
+    direction: ltr; /* סרגל הכלים מיושר לשמאל */
+    text-align: left;
+    background-color: #ffcccc;
+    padding: 10px;
+}
+
+    .navbar a {
+        text-decoration: none;
+        margin: 0 10px;
+        color: #333;
+        font-weight: bold;
+    }
+
+.center-title {
+    text-align: center;
+    font-size: 2.5rem;
+    color: #0078D7;
+    margin-bottom: 20px;
+}
+
+/* עיצוב כללי */
+body {
+    direction: rtl;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+    color: #333;
+}
+
+.navbar {
+    direction: ltr;
+    text-align: left;
+    background-color: #ffcccc;
+    padding: 10px;
+}
+
+    .navbar a {
+        text-decoration: none;
+        margin: 0 10px;
+        color: #333;
+        font-weight: bold;
+    }
+
+/* כותרת מרכזית */
+.center-title {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-top: 20px;
+    color: #0078D7;
+}
+
+/* טופס יצירת קשר */
+.contact-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+.contact-form, .feedback-section form {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    padding: 20px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+label {
+    font-weight: bold;
+    margin-top: 10px;
+    display: block;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.btn-send {
+    background-color: #0078D7;
+    color: #fff;
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+    .btn-send:hover {
+        background-color: #005bb5;
+    }
+
+/* רקע נוסף */
+.contact-background {
+    text-align: center;
+    padding: 20px;
+    background: url('https://source.unsplash.com/1600x900/?books,library') no-repeat center center/cover;
+    color: white;
+    font-size: 1.2rem;
+}
+
+/* פוטר */
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+}
+
+body {
+    direction: rtl;
+    text-align: right;
+    font-family: Arial, sans-serif;
+}
+
+.form-control, select, textarea {
+    width: 50%; /* גודל אחיד לתיבות טקסט */
+    margin: 5px 0; /* מרווחים אחידים */
+    padding: 8px;
+    font-size: 14px;
+}
+
+.form-group label {
+    text-align: right;
+    display: block;
+}
+
+h2, h3 {
+    text-align: center; /* כותרות ממורכזות */
+}
+
+.btn {
+    background-color: #ff69b4;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    cursor: pointer;
+}
+
+    .btn:hover {
+        background-color: #ff1493;
+    }

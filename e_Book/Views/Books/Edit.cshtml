@@ -1,179 +1,191 @@
 ﻿@model e_Book.Models.Book
 
 @{
-    ViewBag.Title = "Edit";
+    ViewBag.Title = "עריכת ספר";
 }
 
-<h2>Edit</h2>
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewBag.Title</title>
+    <style>
+        body {
+            direction: rtl;
+            text-align: right;
+            font-family: Arial, sans-serif;
+        }
+
+        .form-horizontal {
+            width: 60%;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .form-control {
+            width: 100%;
+            max-width: 400px; /* אורך אחיד */
+        }
+
+        .btn {
+            margin-top: 10px;
+            background-color: #f88db0;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+        }
+
+            .btn:hover {
+                background-color: #f16e9a;
+                cursor: pointer;
+            }
+
+        h2 {
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h2>עריכת ספר</h2>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="form-horizontal">
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+            @Html.HiddenFor(model => model.BookId)
+
+            <!-- כותרת -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.Title, "כותרת הספר")
+                @Html.EditorFor(model => model.Title, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Title, "", new { @class = "text-danger" })
+            </div>
+
+            <!-- מחבר -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.Author, "מחבר")
+                @Html.EditorFor(model => model.Author, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Author, "", new { @class = "text-danger" })
+            </div>
+
+            <!-- הוצאה לאור -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.Publisher, "הוצאה לאור")
+                @Html.EditorFor(model => model.Publisher, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Publisher, "", new { @class = "text-danger" })
+            </div>
+
+            <!-- מחיר קנייה -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.PriceBuy, "מחיר קנייה")
+                @Html.EditorFor(model => model.PriceBuy, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.PriceBuy, "", new { @class = "text-danger" })
+            </div>
+
+            <!-- מחיר קודם -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.PreviousPrice, "מחיר קודם")
+                @Html.EditorFor(model => model.PreviousPrice, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.PreviousPrice, "", new { @class = "text-danger" })
+            </div>
+
+            <!-- תאריך סיום הנחה -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.DiscountEndDate, "תאריך סיום הנחה")
+                @Html.EditorFor(model => model.DiscountEndDate, new { htmlAttributes = new { @class = "form-control", @type = "date" } })
+                @Html.ValidationMessageFor(model => model.DiscountEndDate, "", new { @class = "text-danger" })
+            </div>
+
+            <!-- מחיר השאלה -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.PriceBorrow, "מחיר השאלה")
+                @Html.EditorFor(model => model.PriceBorrow, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.PriceBorrow, "", new { @class = "text-danger" })
+            </div>
+
+            <!-- עותקים זמינים -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.AvailableCopies, "עותקים זמינים")
+                @Html.EditorFor(model => model.AvailableCopies, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.AvailableCopies, "", new { @class = "text-danger" })
+            </div>
 
 
-@using (Html.BeginForm())
-{
-    @Html.AntiForgeryToken()
-    
-<div class="form-horizontal">
-    <h4>Book</h4>
-    <hr />
-    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-    @Html.HiddenFor(model => model.BookId)
+            <!-- פורמט -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.Format, "פורמט")
+                @Html.DropDownListFor(model => model.Format, new SelectList(new[] { "PDF", "EPUB", "MOBI", "FB2" }), "בחר פורמט", new { @class = "form-control" })
+                @Html.ValidationMessageFor(model => model.Format, "", new { @class = "text-danger" })
+            </div>
 
-    <div class="form-group">
-        @Html.LabelFor(model => model.Title, htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.EditorFor(model => model.Title, new { htmlAttributes = new { @class = "form-control" } })
-            @Html.ValidationMessageFor(model => model.Title, "", new { @class = "text-danger" })
-        </div>
-    </div>
+            <!-- ז'אנר -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.Genre, "ז'אנר")
+                @Html.DropDownListFor(model => model.Genre, new SelectList(new[] { "רומנטיקה", "אקשן", "דרמה", "קומדיה", "מתח", "מדע בדיוני", "פנטזיה", "אימה", "הרפתקאות", "היסטורי", "ביוגרפיה", "בלש", "חינוך", "שירה" }), "בחר ז'אנר", new { @class = "form-control" })
+                @Html.ValidationMessageFor(model => model.Genre, "", new { @class = "text-danger" })
+            </div>
 
-    <div class="form-group">
-        @Html.LabelFor(model => model.Author, htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.EditorFor(model => model.Author, new { htmlAttributes = new { @class = "form-control" } })
-            @Html.ValidationMessageFor(model => model.Author, "", new { @class = "text-danger" })
-        </div>
-    </div>
+            <!-- שנה -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.YearPublished, "שנת פרסום")
+                @Html.EditorFor(model => model.YearPublished, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.YearPublished, "", new { @class = "text-danger" })
+            </div>
 
-    <div class="form-group">
-        @Html.LabelFor(model => model.Publisher, htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.EditorFor(model => model.Publisher, new { htmlAttributes = new { @class = "form-control" } })
-            @Html.ValidationMessageFor(model => model.Publisher, "", new { @class = "text-danger" })
-        </div>
-    </div>
+            <!-- ניתן להשאלה -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.IsBorrowable, "ניתן להשאלה")
+                <div class="checkbox">
+                    @Html.EditorFor(model => model.IsBorrowable)
+                    @Html.ValidationMessageFor(model => model.IsBorrowable, "", new { @class = "text-danger" })
+                </div>
+            </div>
 
-    <div class="form-group">
-        @Html.LabelFor(model => model.Genre, htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.DropDownListFor(model => model.Genre, new SelectList(new[] { "Romance", "Action", "Drama", "Comedy", "Thriller", "Science Fiction", "Fantasy", "Horror", "Adventure", "Historical Fiction", "Biography", "Mystery", "Self-Help", "Educational", "Poetry" }), "בחר ז'אנר", new { @class = "form-control" })
-            @Html.ValidationMessageFor(model => model.Genre, "", new { @class = "text-danger" })
-        </div>
-    </div>
+            <!-- הגבלת גיל -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.AgeRestriction, "הגבלת גיל")
+                @Html.DropDownListFor(model => model.AgeRestriction, new SelectList(new[] { "לכל הגילאים", "8+", "12+", "16+", "18+" }, "בחר הגבלת גיל"), new { @class = "form-control" })
+            </div>
 
-    <div class="form-group">
-        @Html.LabelFor(model => model.Popularity, htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.DropDownListFor(model => model.Popularity, new SelectList(Enumerable.Range(1, 5)), "בחר דירוג פופולריות", new { @class = "form-control" })
-            @Html.ValidationMessageFor(model => model.Popularity, "", new { @class = "text-danger" })
-        </div>
-    </div>
+            <!-- תקציר -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.Synopsis, "תקציר")
+                @Html.TextAreaFor(model => model.Synopsis, new { @class = "form-control", rows = 4 })
+                @Html.ValidationMessageFor(model => model.Synopsis, "", new { @class = "text-danger" })
+            </div>
 
-    <div class="form-group">
-        @Html.LabelFor(model => model.PriceBuy, htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.EditorFor(model => model.PriceBuy, new { htmlAttributes = new { @class = "form-control" } })
-            @Html.ValidationMessageFor(model => model.PriceBuy, "", new { @class = "text-danger" })
-        </div>
-    </div>
+            <!-- קישור תמונה -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.ImageUrl, "קישור לתמונה")
+                @Html.TextBoxFor(model => model.ImageUrl, new { @class = "form-control", placeholder = "הזן כתובת תמונה" })
+                @Html.ValidationMessageFor(model => model.ImageUrl, "", new { @class = "text-danger" })
+            </div>
 
-    <div class="form-group">
-        @Html.LabelFor(model => model.PreviousPrice, htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.EditorFor(model => model.PreviousPrice, new { htmlAttributes = new { @class = "form-control" } })
-            @Html.ValidationMessageFor(model => model.PreviousPrice, "", new { @class = "text-danger" })
-        </div>
-    </div>
+            <!-- קישור הורדה -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.DownloadLink, "קישור הורדה")
+                @Html.TextBoxFor(model => model.DownloadLink, new { @class = "form-control", placeholder = "הזן קישור להורדה" })
+                @Html.ValidationMessageFor(model => model.DownloadLink, "", new { @class = "text-danger" })
+            </div>
 
-    <div class="form-group">
-        @Html.LabelFor(model => model.DiscountEndDate, htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.EditorFor(model => model.DiscountEndDate, new { htmlAttributes = new { @class = "form-control", @type = "date" } })
-            @Html.ValidationMessageFor(model => model.DiscountEndDate, "", new { @class = "text-danger" })
-        </div>
-    </div>
-
-    <div class="form-group">
-        @Html.LabelFor(model => model.PriceBorrow, htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.EditorFor(model => model.PriceBorrow, new { htmlAttributes = new { @class = "form-control" } })
-            @Html.ValidationMessageFor(model => model.PriceBorrow, "", new { @class = "text-danger" })
-        </div>
-    </div>
-
-    <div class="form-group">
-        @Html.LabelFor(model => model.AvailableCopies, htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.EditorFor(model => model.AvailableCopies, new { htmlAttributes = new { @class = "form-control" } })
-            @Html.ValidationMessageFor(model => model.AvailableCopies, "", new { @class = "text-danger" })
-        </div>
-    </div>
-
-    <div class="form-group">
-        @Html.LabelFor(model => model.Format, htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.DropDownListFor(model => model.Format, new SelectList(new[] { "PDF", "EPUB", "MOBI", "FB2" }, Model.Format), "בחר פורמט", new { @class = "form-control" })
-            @Html.ValidationMessageFor(model => model.Format, "", new { @class = "text-danger" })
-        </div>
-    </div>
-
-
-    <div class="form-group">
-        @Html.LabelFor(model => model.YearPublished, htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.EditorFor(model => model.YearPublished, new { htmlAttributes = new { @class = "form-control" } })
-            @Html.ValidationMessageFor(model => model.YearPublished, "", new { @class = "text-danger" })
-        </div>
-    </div>
-
-    <div class="form-group">
-        @Html.LabelFor(model => model.IsBorrowable, htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            <div class="checkbox">
-                @Html.EditorFor(model => model.IsBorrowable)
-                @Html.ValidationMessageFor(model => model.IsBorrowable, "", new { @class = "text-danger" })
+            <!-- כפתור שמירה -->
+            <div class="form-group text-center">
+                <input type="submit" value="שמור" class="btn btn-primary" />
+                @Html.ActionLink("חזרה לרשימה", "Index", null, new { @class = "btn btn-secondary" })
             </div>
         </div>
-    </div>
-
-    <div class="form-group">
-        @Html.LabelFor(model => model.AgeRestriction, htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.DropDownListFor(model => model.AgeRestriction,
-                new SelectList(new[] { "All Ages", "8+", "12+", "16+", "18+" }, "בחר הגבלת גיל"),
-                new { @class = "form-control" })
-            @Html.ValidationMessageFor(model => model.AgeRestriction, "", new { @class = "text-danger" })
-        </div>
-    </div>
-
-    <!-- כתובת תמונה -->
-    <div class="form-group">
-        @Html.LabelFor(model => model.ImageUrl, "Image URL", htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.EditorFor(model => model.ImageUrl, new { htmlAttributes = new { @class = "form-control" } })
-            @Html.ValidationMessageFor(model => model.ImageUrl, "", new { @class = "text-danger" })
-        </div>
-    </div>
-
-    <!-- תקציר -->
-    <div class="form-group">
-        @Html.LabelFor(model => model.Synopsis, htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.TextAreaFor(model => model.Synopsis, new { @class = "form-control", rows = 5 })
-            @Html.ValidationMessageFor(model => model.Synopsis, "", new { @class = "text-danger" })
-        </div>
-    </div>
-
-    <div class="form-group">
-        @Html.LabelFor(model => model.DownloadLink, "קישור הורדה", htmlAttributes: new { @class = "control-label col-md-2" })
-        <div class="col-md-10">
-            @Html.TextBoxFor(model => model.DownloadLink, new { @class = "form-control", placeholder = "הזן קישור להורדה" })
-            @Html.ValidationMessageFor(model => model.DownloadLink, "", new { @class = "text-danger" })
-        </div>
-    </div>
-
-
-    <!-- קישור הורדה -->
-    <div class="form-group">
-        <div class="col-md-offset-2 col-md-10">
-            <input type="submit" value="Save" class="btn btn-default" />
-        </div>
-    </div>
-</div>
-}
-
-<div>
-    @Html.ActionLink("Back to List", "Index")
-</div>
-
-@section Scripts {
-    @Scripts.Render("~/bundles/jqueryval")
-}
+    }
+</body>
+</html>

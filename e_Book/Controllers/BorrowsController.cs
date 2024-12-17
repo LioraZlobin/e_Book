@@ -44,10 +44,14 @@ namespace e_Book.Controllers
                         if (user != null && !string.IsNullOrEmpty(user.Email))
                         {
                             string subject = "תזכורת: החזרת ספר";
-                            string body = $"שלום {user.Name},<br/><br/>"
-                                          + $"תזכורת כי נותרו לך 5 ימים להחזרת הספר \"{borrow.Book.Title}\".<br/>"
-                                          + $"תאריך החזרה: {borrow.DueDate:dd/MM/yyyy}.<br/><br/>"
-                                          + "תודה,<br/>צוות הספרייה.";
+                            string body = $@"
+                                  <div dir='rtl' style='text-align:right; font-family:Arial, sans-serif;'>
+                                        <h2>תזכורת להחזרת ספר</h2>
+                                        <p>שלום {user.Name},</p>
+                                        <p>נותרו לך 5 ימים להחזרת הספר <strong>{borrow.Book.Title}</strong>.</p>
+                                        <p><strong>תאריך החזרה:</strong> {borrow.DueDate:dd/MM/yyyy}</p>
+                                        <p>תודה,<br/>צוות הספרייה</p>
+                                  </div>";
 
                             // שליחת מייל
                             _emailService.SendEmail(user.Email, subject, body);
@@ -227,6 +231,7 @@ namespace e_Book.Controllers
                 borrow.IsReturned = true; // סימון הספר כהוחזר
                 var book = db.Books.FirstOrDefault(b => b.BookId == borrow.BookId);
 
+
                 if (book == null)
                 {
                     TempData["Error"] = "הספר אינו קיים.";
@@ -251,8 +256,24 @@ namespace e_Book.Controllers
                     };
                     book.AvailableCopies++;
                     db.CartItems.Add(newCartItem);
-                    //db.WaitingLists.Remove(waitingUser); // הסרת המשתמש מרשימת ההמתנה
-                    TempData["Success"] = "הספר הועבר למשתמש הבא ברשימת ההמתנה.";
+                    db.WaitingLists.Remove(waitingUser);
+                    TempData["Success"] = "הספר הוחזר והועבר למשתמש הבא ברשימת ההמתנה.";
+                    // שליחת מייל למשתמש
+                    var user = db.Users.FirstOrDefault(u => u.UserId == waitingUser.UserId);
+                    if (user != null && !string.IsNullOrEmpty(user.Email))
+                    {
+                        string subject = "הספר זמין עבורך!";
+                        string body = $@"
+                             <div dir='rtl' style='text-align:right; font-family:Arial, sans-serif;'>
+                                  <h2>הספר '{book.Title}' זמין</h2>
+                                  <p>שלום {user.Name},</p>
+                                  <p>הספר שהמתנת לו נוסף כעת לעגלת הקניות שלך להשלמת תהליך ההשאלה.</p>
+                                  <p>אנא גש לעגלת הקניות שלך בהקדם.</p>
+                                  <p>תודה,<br/>צוות הספרייה</p>
+                             </div>";
+
+                        _emailService.SendEmail(user.Email, subject, body);
+                    }
                 }
                 else
                 {

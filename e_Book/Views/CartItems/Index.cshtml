@@ -33,37 +33,38 @@
         {
             foreach (var item in Model)
             {
-        <tr>
-            <td>@item.Book.Title</td>
-            <td>@item.Book.Author</td>
-            <td id="price-@item.CartItemId">
-                @(item.TransactionType == "buy" ? string.Format("{0:C}", item.Book.PriceBuy) : string.Format("{0:C}", item.Book.PriceBorrow))
-            </td>
-            <td>
-                <button class="btn btn-sm btn-secondary" onclick="updateQuantity(@item.CartItemId, -1)">-</button>
-                @item.Quantity
-                <button class="btn btn-sm btn-secondary" onclick="updateQuantity(@item.CartItemId, 1)" @(item.Quantity >= 1 ? "disabled" : "")></button>
-            </td>
-            <td>
-                <select id="transactionType-@item.CartItemId" class="form-control" onchange="updateTransactionType(@item.CartItemId, this.value)" @(item.Book.IsBorrowable ? "" : "disabled")>
-                    <option value="buy" @(item.TransactionType == "buy" ? "selected" : "")>קנייה</option>
-                    @if (item.Book.IsBorrowable)
-                    {
-                        <option value="borrow" @(item.TransactionType == "borrow" ? "selected" : "")>השאלה</option>
-                    }
-                </select>
-            </td>
-
-            <td id="total-@item.CartItemId">
-                @string.Format("{0:C}", (item.TransactionType == "buy" ? item.Book.PriceBuy : item.Book.PriceBorrow) * item.Quantity)
-            </td>
-            <td>
-                <form action="@Url.Action("RemoveFromCart", "CartItems", new { cartItemId = item.CartItemId })" method="post">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-danger btn-sm">הסר מהעגלה</button>
-                </form>
-            </td>
-        </tr>
+                <tr>
+                    <td>@item.Book.Title</td>
+                    <td>@item.Book.Author</td>
+                    <td id="price-@item.CartItemId">
+                        @(item.TransactionType == "buy" ? string.Format("{0:C}", item.Book.PriceBuy) : string.Format("{0:C}", item.Book.PriceBorrow))
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" onclick="updateQuantity(@item.CartItemId, -1)">-</button>
+                        @item.Quantity
+                        <button class="btn btn-sm btn-secondary" onclick="updateQuantity(@item.CartItemId, 1)" @(item.Quantity >= 1 ? "disabled" : "")></button>
+                    </td>
+                    <td>
+                        <!-- הצגת סוג העסקה כטקסט בלבד -->
+                        @if (item.TransactionType == "buy")
+                        {
+                            <span>קנייה</span>
+                        }
+                        else if (item.TransactionType == "borrow")
+                        {
+                            <span>השאלה</span>
+                        }
+                    </td>
+                    <td id="total-@item.CartItemId">
+                        @string.Format("{0:C}", (item.TransactionType == "buy" ? item.Book.PriceBuy : item.Book.PriceBorrow) * item.Quantity)
+                    </td>
+                    <td>
+                        <form action="@Url.Action("RemoveFromCart", "CartItems", new { cartItemId = item.CartItemId })" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-danger btn-sm">הסר מהעגלה</button>
+                        </form>
+                    </td>
+                </tr>
             }
         }
         else
@@ -111,35 +112,6 @@
         .catch((error) => {
             console.error('Error:', error);
             alert('שגיאה בעדכון הכמות.');
-        });
-    }
-
-    function updateTransactionType(cartItemId, transactionType) {
-        fetch('@Url.Action("GetBookPrice", "CartItems")', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ cartItemId, transactionType })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const priceElement = document.getElementById(`price-${cartItemId}`);
-                const totalElement = document.getElementById(`total-${cartItemId}`);
-                const grandTotalElement = document.getElementById('grandTotal');
-
-                priceElement.textContent = data.price;
-                totalElement.textContent = data.total;
-                grandTotalElement.textContent = data.grandTotal;
-            } else {
-                alert(data.message);
-                document.getElementById(`transactionType-${cartItemId}`).value = "buy";
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('שגיאה בתקשורת עם השרת.');
         });
     }
 </script>
