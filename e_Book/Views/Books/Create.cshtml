@@ -94,6 +94,13 @@
                 @Html.ValidationMessageFor(model => model.Genre, "", new { @class = "text-danger" })
             </div>
 
+            <!-- פופולריות -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.Popularity, "פופולריות")
+                @Html.DropDownListFor(model => model.Popularity, new SelectList(new[] { "1","2","3","4","5" }), "בחר פופולריות", new { @class = "form-control" })
+                @Html.ValidationMessageFor(model => model.Genre, "", new { @class = "text-danger" })
+            </div>
+
             <!-- שנת פרסום -->
             <div class="form-group">
                 @Html.LabelFor(model => model.YearPublished, "שנת פרסום")

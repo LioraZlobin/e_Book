@@ -434,3 +434,26 @@ h2, h3 {
     .btn:hover {
         background-color: #ff1493;
     }
+
+.card {
+    border-radius: 10px;
+    transition: transform 0.2s;
+}
+
+    .card:hover {
+        transform: scale(1.05);
+    }
+
+.carousel-control-prev, .carousel-control-next {
+    background-color: rgba(0, 0, 0, 0.2);
+    width: 5%;
+}
+
+.card {
+    transition: transform 0.3s ease-in-out;
+}
+
+    .card:hover {
+        transform: scale(1.05);
+    }
+

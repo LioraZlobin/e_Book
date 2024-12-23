@@ -238,49 +238,36 @@ namespace e_Book.Controllers
                     return RedirectToAction("UserLibrary");
                 }
 
-                // טיפול ברשימת ההמתנה
-                var waitingUser = db.WaitingLists
-                                    .Where(w => w.BookId == book.BookId)
-                                    .OrderBy(w => w.Position) // מוודא שהמשתמש הראשון מקבל עדיפות
-                                    .FirstOrDefault();
+                // הגדלת העותקים הזמינים
+                book.AvailableCopies++;
 
-                if (waitingUser != null)
+                // שליפת 3 הראשונים ברשימת ההמתנה
+                var waitingUsers = db.WaitingLists
+                    .Where(w => w.BookId == book.BookId)
+                    .OrderBy(w => w.Position)
+                    .Take(3)
+                    .ToList();
+
+                foreach (var waitingUser in waitingUsers)
                 {
-                    // הוספת הספר לעגלת הקניות של המשתמש הראשון ברשימת ההמתנה
-                    var newCartItem = new CartItem
-                    {
-                        UserId = waitingUser.UserId,
-                        BookId = book.BookId,
-                        Quantity = 1,
-                        TransactionType = "borrow" // במקרה של השאלה
-                    };
-                    book.AvailableCopies++;
-                    db.CartItems.Add(newCartItem);
-                    db.WaitingLists.Remove(waitingUser);
-                    TempData["Success"] = "הספר הוחזר והועבר למשתמש הבא ברשימת ההמתנה.";
-                    // שליחת מייל למשתמש
                     var user = db.Users.FirstOrDefault(u => u.UserId == waitingUser.UserId);
                     if (user != null && !string.IsNullOrEmpty(user.Email))
                     {
-                        string subject = "הספר זמין עבורך!";
+                        string subject = "הספר זמין להשאלה!";
                         string body = $@"
-                             <div dir='rtl' style='text-align:right; font-family:Arial, sans-serif;'>
-                                  <h2>הספר '{book.Title}' זמין</h2>
-                                  <p>שלום {user.Name},</p>
-                                  <p>הספר שהמתנת לו נוסף כעת לעגלת הקניות שלך להשלמת תהליך ההשאלה.</p>
-                                  <p>אנא גש לעגלת הקניות שלך בהקדם.</p>
-                                  <p>תודה,<br/>צוות הספרייה</p>
-                             </div>";
+                     <div dir='rtl' style='text-align:right; font-family:Arial, sans-serif;'>
+                          <h2>הספר '{book.Title}' זמין להשאלה</h2>
+                          <p>שלום {user.Name},</p>
+                          <p>הספר שחיכית לו חזר למלאי. מהרו לבצע השאלה לפני שיאזל.</p>
+                          <p>שימו לב: הספר יוקצה למי שישלים את תהליך ההשאלה ראשון.</p>
+                          <p>תודה,<br/>צוות הספרייה</p>
+                     </div>";
 
                         _emailService.SendEmail(user.Email, subject, body);
                     }
                 }
-                else
-                {
-                    // אין רשימת המתנה, עדכון העותקים הזמינים
-                    book.AvailableCopies++;
-                    TempData["Success"] = "הספר הוחזר בהצלחה.";
-                }
+                db.SaveChanges();
+                TempData["Success"] = "הספר הוחזר בהצלחה ונשלחו הודעות לממתינים.";
             }
             else if (bookId.HasValue)
             {
@@ -419,22 +406,7 @@ namespace e_Book.Controllers
                 return RedirectToAction("Index", "Books");
             }
 
-            if (book.AvailableCopies <= 0)
-            {
-                // הוספת המשתמש לרשימת ההמתנה
-                var waitingPosition = db.WaitingLists.Count(w => w.BookId == bookId) + 1;
-                db.WaitingLists.Add(new WaitingList
-                {
-                    BookId = bookId,
-                    UserId = user.UserId,
-                    Position = waitingPosition,
-                    AddedDate = DateTime.Now
-                });
-                db.SaveChanges();
 
-                TempData["Error"] = $"הספר אינו זמין כרגע. נוספת לרשימת ההמתנה במקום {waitingPosition}.";
-                return RedirectToAction("Index", "Books");
-            }
 
             // יצירת השאלה חדשה
             var borrow = new Borrow
@@ -489,6 +461,47 @@ namespace e_Book.Controllers
         }
 
 
+        public void ProcessExpiredBorrows()
+        {
+            try
+            {
+                // שליפת כל ההשאלות שפג תוקפן ולא הוחזרו
+                var expiredBorrows = db.Borrows
+                    .Where(b => !b.IsReturned && b.DueDate < DateTime.Now)
+                    .Include(b => b.Book)
+                    .ToList();
+
+                foreach (var borrow in expiredBorrows)
+                {
+                    // סימון הספר כהוחזר
+                    borrow.IsReturned = true;
+
+                    // הגדלת כמות העותקים הזמינים
+                    if (borrow.Book != null)
+                    {
+                        borrow.Book.AvailableCopies++;
+                    }
+                }
+
+                // שמירת השינויים במסד הנתונים
+                db.SaveChanges();
+
+                TempData["Success"] = "התהליך לעדכון השאלות שפג תוקפן הושלם בהצלחה.";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in ProcessExpiredBorrows: {ex.Message}");
+                TempData["Error"] = "אירעה שגיאה בתהליך עדכון ההשאלות שפג תוקפן.";
+            }
+        }
+
+
+        [HttpGet]
+        public ActionResult RunBorrowCleanup()
+        {
+            ProcessExpiredBorrows();
+            return Content("Borrow cleanup process completed successfully.");
+        }
 
 
     }

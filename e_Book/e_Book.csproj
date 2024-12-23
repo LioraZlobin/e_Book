@@ -322,6 +322,7 @@
     <Content Include="Views\CartItems\Edit.cshtml" />
     <Content Include="Views\CartItems\Index.cshtml" />
     <Content Include="Views\CartItems\Checkout.cshtml" />
+    <Content Include="Views\Books\CreateServiceFeedback.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

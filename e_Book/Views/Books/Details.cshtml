@@ -86,6 +86,14 @@
             <td>@Html.DisplayFor(model => model.Publisher)</td>
         </tr>
         <tr>
+            <th>ז'אנר</th>
+            <td>@Html.DisplayFor(model => model.Genre)</td>
+        </tr>
+        <tr>
+            <th>פופולריות</th>
+            <td>@Html.DisplayFor(model => model.Popularity)</td>
+        </tr>
+        <tr>
             <th>מחיר קנייה</th>
             <td>@Html.DisplayFor(model => model.PriceBuy)</td>
         </tr>
@@ -133,6 +141,36 @@
                 <span>לא קיים תקציר עבור ספר זה.</span>
             }
         </p>
+    </div>
+
+    <!-- טופס הוספת דירוג על ספר -->
+    @if (ViewBag.CanRate)
+    {
+        <div class="mt-4">
+            <h4>הוסף דירוג לספר</h4>
+            <form action="@Url.Action("AddFeedback", "Books")" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="BookId" value="@Model.BookId" />
+                <input type="hidden" name="IsPurchaseFeedback" value="false" />
+                <label>דירוג (1-5):</label>
+                <input type="number" name="Rating" min="1" max="5" class="form-control mb-2" required />
+                <label>הערה:</label>
+                <textarea name="Content" rows="3" class="form-control mb-2"></textarea>
+                <button type="submit" class="btn btn-primary">שלח משוב</button>
+            </form>
+        </div>}
+
+    <!-- הצגת משובים לספר -->
+    <div class="mt-4">
+        <h4>משובים לספר זה</h4>
+        @foreach (var feedback in ViewBag.BookFeedbacks)
+        {
+            <div class="border p-2 mb-2">
+                <strong>דירוג:</strong> @feedback.Rating/5<br />
+                <strong>הערה:</strong> @feedback.Content<br />
+                <small>תאריך: @feedback.FeedbackDate.ToShortDateString()</small>
+                <small>פורסם על ידי: @(feedback.User != null ? feedback.User.Name : "משתמש לא ידוע")<br /></small>
+            </div>}
     </div>
 
     <!-- כפתורי ניווט -->

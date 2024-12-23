@@ -1,5 +1,6 @@
 ﻿@model IEnumerable<e_Book.Models.Book>
 
+
 @{ ViewBag.Title = "Books"; }
 
 <div class="container">
@@ -28,13 +29,68 @@
     <div class="alert alert-success" id="message-box">@TempData["Success"]</div>
 }
 
-<div class="btn-group mb-4">
-    <a href="@Url.Action("FilterDiscountedBooks", "Books")" class="filter-btn">ספרים בהנחה</a>
-    <a href="@Url.Action("Sort", "Books", new { sortBy = "price_asc" })" class="filter-btn">מחיר - מהנמוך לגבוה</a>
-    <a href="@Url.Action("Sort", "Books", new { sortBy = "price_desc" })" class="filter-btn">מחיר - מהגבוה לנמוך</a>
-    <a href="@Url.Action("Sort", "Books", new { sortBy = "year" })" class="filter-btn">שנה - מהחדשה לישנה</a>
-    <a href="@Url.Action("Sort", "Books", new { sortBy = "year_asc" })" class="filter-btn">שנה - מהישנה לחדשה</a>
+<div class="d-flex flex-wrap justify-content-center mb-4">
+    <a href="@Url.Action("FilterDiscountedBooks", "Books")" class="btn btn-primary mx-1 mb-2">ספרים בהנחה</a>
+    <a href="@Url.Action("Sort", "Books", new { sortBy = "price_asc" })" class="btn btn-primary mx-1 mb-2">מחיר - מהנמוך לגבוה</a>
+    <a href="@Url.Action("Sort", "Books", new { sortBy = "price_desc" })" class="btn btn-primary mx-1 mb-2">מחיר - מהגבוה לנמוך</a>
+    <a href="@Url.Action("Sort", "Books", new { sortBy = "year" })" class="btn btn-primary mx-1 mb-2">שנה - מהחדשה לישנה</a>
+    <a href="@Url.Action("Sort", "Books", new { sortBy = "year_asc" })" class="btn btn-primary mx-1 mb-2">שנה - מהישנה לחדשה</a>
+    <a href="@Url.Action("Sort", "Books", new { sortBy = "popularity" })" class="btn btn-primary mx-1 mb-2">הכי פופולרי</a>
+
+
+    <!-- Dropdown לסינון לפי טווח מחירי קנייה -->
+    <div class="btn-group mx-1 mb-2">
+        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            סינון לפי מחיר קניה
+        </button>
+        <div class="dropdown-menu">
+            <a class="dropdown-item" href="@Url.Action("Filter", "Books", new { minPrice = 0, maxPrice = 50 })">מחיר עד 50₪</a>
+            <a class="dropdown-item" href="@Url.Action("Filter", "Books", new { minPrice = 50, maxPrice = 100 })">מחיר 50₪ - 100₪</a>
+            <a class="dropdown-item" href="@Url.Action("Filter", "Books", new { minPrice = 100 })">מחיר מעל 100₪</a>
+        </div>
+    </div>
+
+    <!-- Dropdown לסינון לפי טווח מחירי השאלה -->
+    <div class="btn-group mx-1 mb-2">
+        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            סינון לפי מחיר השאלה
+        </button>
+        <div class="dropdown-menu">
+            <a class="dropdown-item" href="@Url.Action("FilterByBorrowPrice", "Books", new { minPrice = 0, maxPrice = 20 })">מחיר עד 20₪</a>
+            <a class="dropdown-item" href="@Url.Action("FilterByBorrowPrice", "Books", new { minPrice = 20, maxPrice = 50 })">מחיר 20₪ - 50₪</a>
+            <a class="dropdown-item" href="@Url.Action("FilterByBorrowPrice", "Books", new { minPrice = 50 })">מחיר מעל 50₪</a>
+        </div>
+    </div>
+
+    <!-- Dropdown לסינון לפי ז'אנר -->
+    <div class="btn-group mx-1 mb-2">
+        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            סינון לפי ז'אנר
+        </button>
+        <div class="dropdown-menu">
+            <a class="dropdown-item" href="@Url.Action("FilterByGenre", "Books", new { genre = "רומנטיקה" })">רומנטיקה</a>
+            <a class="dropdown-item" href="@Url.Action("FilterByGenre", "Books", new { genre = "אקשן" })">אקשן</a>
+            <a class="dropdown-item" href="@Url.Action("FilterByGenre", "Books", new { genre = "דרמה" })">דרמה</a>
+            <a class="dropdown-item" href="@Url.Action("FilterByGenre", "Books", new { genre = "קומדיה" })">קומדיה</a>
+            <a class="dropdown-item" href="@Url.Action("FilterByGenre", "Books", new { genre = "מתח" })">מתח</a>
+            <a class="dropdown-item" href="@Url.Action("FilterByGenre", "Books", new { genre = "מדע בדיוני" })">מדע בדיוני</a>
+            <a class="dropdown-item" href="@Url.Action("FilterByGenre", "Books", new { genre = "פנטזיה" })">פנטזיה</a>
+            <a class="dropdown-item" href="@Url.Action("FilterByGenre", "Books", new { genre = "אימה" })">אימה</a>
+            <a class="dropdown-item" href="@Url.Action("FilterByGenre", "Books", new { genre = "הרפתקאות" })">הרפתקאות</a>
+            <a class="dropdown-item" href="@Url.Action("FilterByGenre", "Books", new { genre = "היסטורי" })">היסטורי</a>
+            <a class="dropdown-item" href="@Url.Action("FilterByGenre", "Books", new { genre = "ביוגרפיה" })">ביוגרפיה</a>
+            <a class="dropdown-item" href="@Url.Action("FilterByGenre", "Books", new { genre = "בלש" })">בלש</a>
+            <a class="dropdown-item" href="@Url.Action("FilterByGenre", "Books", new { genre = "חינוך" })">חינוך</a>
+            <a class="dropdown-item" href="@Url.Action("FilterByGenre", "Books", new { genre = "שירה" })">שירה</a>
+        </div>
+    </div>
+
+    <!-- סינון לפי זמינות -->
+    <a href="@Url.Action("FilterByAvailability", "Books", new { availability = "buy" })" class="btn btn-primary mx-1 mb-2">ספרים לקנייה בלבד</a>
+    <a href="@Url.Action("FilterByAvailability", "Books", new { availability = "borrow" })" class="btn btn-primary mx-1 mb-2">ספרים להשאלה </a>
+
 </div>
+
 
 <div class="books-title-container">
     <h3 class="custom-title">BOOKS</h3>
@@ -75,7 +131,7 @@
                             @if (item.IsBorrowable)
                             {
                                 <strong>מחיר השאלה:</strong> @item.PriceBorrow.ToString("C")<br />
-                                <strong>עותקים זמינים:</strong> @item.AvailableCopies<br />
+                                <strong>עותקים זמינים להשאלה:</strong> @item.AvailableCopies<br />
                             }
 
                         </p>
@@ -138,6 +194,46 @@
                             }
                         </form>
 
+                        @{
+                            // המרת המחרוזת של הגבלת הגיל למספר שלם
+                            int requireAge = 0; // ברירת מחדל אם אין הגבלת גיל
+                            if (!string.IsNullOrEmpty(item.AgeRestriction) && item.AgeRestriction != "All Ages")
+                            {
+                                int.TryParse(item.AgeRestriction.Replace("+", ""), out requireAge);
+                            }
+
+                            // בדיקה אם המשתמש לא עומד במגבלת הגיל
+                            bool isAgeRestrict = requiredAge > 0 && ViewBag.UserAge < requireAge;
+
+                            // בדיקה אם הספר כבר נמצא בספרייה האישית של המשתמש
+                            bool isInPersonalLibrary = ViewBag.UserLibraryBooks != null &&
+                                                       ((List<int>)ViewBag.UserLibraryBooks).Contains(item.BookId);
+                        }
+
+                        @if (isAgeRestrict)
+                        {
+                            <!-- כפתור חסום במקרה שהמשתמש לא עומד במגבלת הגיל -->
+                            <button type="button" class="btn btn-secondary btn-sm w-100" disabled>
+                                אינך עומד בהגבלת הגיל
+                            </button>
+                        }
+                        else if (isInPersonalLibrary)
+                        {
+                            <!-- כפתור חסום במקרה שהספר כבר בספרייה האישית -->
+                            <button type="button" class="btn btn-secondary btn-sm w-100" disabled>
+                                הספר כבר נמצא בספרייה האישית שלך
+                            </button>
+                        }
+                        else
+                        {
+                            <!-- כפתור קנה עכשיו -->
+                            <form action="@Url.Action("BuyNow", "Books", new { bookId = item.BookId })" method="post" class="mt-2">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-success btn-sm w-100">
+                                    קנה עכשיו
+                                </button>
+                            </form>
+                        }
 
 
                     </div>
@@ -146,7 +242,59 @@
             </div>
         }
     </div>
+
 </div>
+
+
+<div class="container mt-5">
+    <div>
+        <h2>הוסף חוות דעת על השירות</h2>
+    </div>
+    @using (Html.BeginForm("AddServiceFeedback", "Books", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="form-group">
+            <label for="Rating">דירוג (1-5):</label>
+            <select name="Rating" class="form-control" style="width: 20%;" required>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="Content">תוכן חוות הדעת:</label>
+            <textarea name="Content" class="form-control" rows="4" placeholder="כתוב את חוות הדעת שלך כאן..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-success">שלח חוות דעת</button>}
+
+
+</div>
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">מה המשתמשים חושבים על השירות שלנו</h2>
+    <div class="row">
+        @foreach (var feedback in ViewBag.ServiceFeedbacks)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">דירוג: @feedback.Rating/5</h5>
+                        <p class="card-text">@feedback.Content</p>
+                        <small class="text-muted">
+                            פורסם על ידי: @(feedback.User != null ? feedback.User.Name : "משתמש לא ידוע") <br />
+                            תאריך: @feedback.FeedbackDate.ToShortDateString()
+                        </small>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+
 
 <script>
     document.addEventListener("DOMContentLoaded", () => {

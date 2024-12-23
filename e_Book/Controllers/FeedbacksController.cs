@@ -9,6 +9,7 @@ using System.Web.Mvc;
 using eBookLibrary.Models;
 using e_Book.Models;
 
+
 namespace e_Book.Controllers
 {
     public class FeedbacksController : Controller
@@ -238,23 +239,23 @@ namespace e_Book.Controllers
             return View(feedback);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult AddPurchaseFeedback(Feedback feedback)
-        {
-            if (ModelState.IsValid)
-            {
-                feedback.FeedbackDate = DateTime.Now;
-                feedback.UserId = int.Parse(Session["UserId"].ToString());
-                db.Feedbacks.Add(feedback);
-                db.SaveChanges();
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public ActionResult AddPurchaseFeedback(Feedback feedback)
+        //{
+        //    if (ModelState.IsValid)
+        //    {
+        //        feedback.FeedbackDate = DateTime.Now;
+        //        feedback.UserId = int.Parse(Session["UserId"].ToString());
+        //        db.Feedbacks.Add(feedback);
+        //        db.SaveChanges();
 
-                TempData["Success"] = "חוות הדעת נשמרה בהצלחה!";
-                return RedirectToAction("UserLibrary", "Borrows");
-            }
+        //        TempData["Success"] = "חוות הדעת נשמרה בהצלחה!";
+        //        return RedirectToAction("UserLibrary", "Borrows");
+        //    }
 
-            return View(feedback);
-        }
+        //    return View(feedback);
+        //}
 
 
 

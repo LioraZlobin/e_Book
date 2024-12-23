@@ -196,6 +196,7 @@ namespace e_Book.Controllers
                               .Where(c => c.UserId == userId)
                               .ToList();
 
+
             return View(cartItems);
         }
 
@@ -221,18 +222,6 @@ namespace e_Book.Controllers
                 return RedirectToAction("Index", "Books");
             }
 
-            //// בדיקה של הגבלת גיל מול גיל המשתמש
-            //int userAge = DateTime.Now.Year - user.Age; // חישוב גיל המשתמש
-            //if (!string.IsNullOrEmpty(book.AgeRestriction) && book.AgeRestriction != "All Ages")
-            //{
-            //    int requiredAge = int.Parse(book.AgeRestriction.Replace("+", ""));
-            //    if (userAge < requiredAge)
-            //    {
-            //        TempData["Error"] = $"אינך עומד בהגבלת הגיל של הספר '{book.Title}'. הגיל המינימלי הנדרש הוא {requiredAge}.";
-            //        return RedirectToAction("Index", "Books");
-            //    }
-            //}
-
             // בדיקה אם הספר כבר בעגלה
             var existingItem = db.CartItems.FirstOrDefault(c => c.UserId == userId && c.BookId == bookId);
             if (existingItem != null)
@@ -241,14 +230,35 @@ namespace e_Book.Controllers
                 return RedirectToAction("Index", "Books");
             }
 
+            // בדיקה אם הספר כבר נמצא בספריה האישית (נרכש או מושאל)
+            var alreadyOwned = db.Borrows.Any(b => b.UserId == userId && b.BookId == bookId && !b.IsReturned) ||
+                               db.Purchases.Any(p => p.UserId == userId && p.BookId == bookId);
+
+            if (alreadyOwned)
+            {
+                TempData["Error"] = "הספר כבר נמצא בספריה האישית שלך.";
+                return RedirectToAction("Index", "Books");
+            }
+
+            // השאלה עם בדיקת עותקים זמינים
             // השאלה עם בדיקת עותקים זמינים
             if (transactionType == "borrow")
             {
+                var activeBorrowsCount = db.Borrows.Count(b => b.UserId == userId && !b.IsReturned);
+                var cartBorrowsCount = db.CartItems.Count(c => c.UserId == userId && c.TransactionType == "borrow");
+                int totalBorrows = activeBorrowsCount + cartBorrowsCount;
+
+                if (totalBorrows >= 3)
+                {
+                    TempData["Error"] = "לא ניתן להשאיל יותר מ-3 ספרים בו-זמנית (כולל ספרים בעגלה).";
+                    return RedirectToAction("Index", "Books");
+                }
+
                 if (book.IsBorrowable)
                 {
-                    if (book.AvailableCopies > 0)
+                    if (book.AvailableCopies > 1)
                     {
-                        // הוספת השאלה לעגלה
+                        // הוספה רגילה לעגלה
                         db.CartItems.Add(new CartItem
                         {
                             UserId = userId,
@@ -259,17 +269,92 @@ namespace e_Book.Controllers
                         db.SaveChanges();
                         TempData["Success"] = $"הספר '{book.Title}' נוסף לעגלה להשאלה.";
                     }
+                    else if (book.AvailableCopies == 1)
+                    {
+                        var waitingList = db.WaitingLists.Where(w => w.BookId == bookId).OrderBy(w => w.Position).ToList();
+                        var userInWaitingList = waitingList.FirstOrDefault(w => w.UserId == userId);
+
+                        if (!waitingList.Any())
+                        {
+                            // אין רשימת המתנה
+                            db.CartItems.Add(new CartItem
+                            {
+                                UserId = userId,
+                                BookId = bookId,
+                                Quantity = 1,
+                                TransactionType = "borrow"
+                            });
+                            db.SaveChanges();
+                            TempData["Success"] = $"הספר '{book.Title}' נוסף לעגלה להשאלה.";
+                        }
+                        else
+                        {
+                            if (userInWaitingList != null)
+                            {
+                                if (waitingList.Take(3).Any(w => w.UserId == userId))
+                                {
+                                    db.CartItems.Add(new CartItem
+                                    {
+                                        UserId = userId,
+                                        BookId = bookId,
+                                        Quantity = 1,
+                                        TransactionType = "borrow"
+                                    });
+                                    // הסרת המשתמש מרשימת ההמתנה
+                                    db.WaitingLists.Remove(userInWaitingList);
+
+                                    // עדכון המיקומים ברשימת ההמתנה
+                                    foreach (var item in waitingList.Where(w => w.Position > userInWaitingList.Position))
+                                    {
+                                        item.Position--;
+                                    }
+                                    db.SaveChanges();
+                                    TempData["Success"] = $"הספר '{book.Title}' נוסף לעגלה להשאלה.";
+                                }
+                                else
+                                {
+                                    TempData["Error"] = "אתה נמצא ברשימת ההמתנה אך אינך בין השלושה הראשונים.";
+                                }
+                            }
+                            else
+                            {
+                                // הוספת המשתמש לרשימת ההמתנה
+                                var position = waitingList.Count + 1;
+                                db.WaitingLists.Add(new WaitingList
+                                {
+                                    UserId = userId,
+                                    BookId = bookId,
+                                    Position = position,
+                                    AddedDate = DateTime.Now
+                                });
+                                db.SaveChanges();
+                                TempData["Info"] = $"הספר אינו זמין כרגע. אתה במקום {position} ברשימת ההמתנה.";
+                            }
+                        }
+                    }
                     else
                     {
-                        // הוספת לרשימת המתנה
-                        db.WaitingLists.Add(new WaitingList
+                        // עותקים שווים ל-0
+                        var waitingList = db.WaitingLists.Where(w => w.BookId == bookId).OrderBy(w => w.Position).ToList();
+                        var userInWaitingList = waitingList.FirstOrDefault(w => w.UserId == userId);
+
+                        if (userInWaitingList != null)
                         {
-                            UserId = userId,
-                            BookId = bookId,
-                            AddedDate = DateTime.Now
-                        });
-                        db.SaveChanges();
-                        TempData["Info"] = $"הספר '{book.Title}' אינו זמין להשאלה כרגע ונוספת לרשימת ההמתנה.";
+                            TempData["Info"] = $"אתה כבר נמצא ברשימת ההמתנה במקום {userInWaitingList.Position}.";
+                        }
+                        else
+                        {
+                            var position = waitingList.Count + 1;
+                            db.WaitingLists.Add(new WaitingList
+                            {
+                                UserId = userId,
+                                BookId = bookId,
+                                Position = position,
+                                AddedDate = DateTime.Now
+                            });
+                            db.SaveChanges();
+                            TempData["Info"] = $"הספר אינו זמין כרגע. אתה במקום {position} ברשימת ההמתנה.";
+                        }
                     }
                 }
                 else
@@ -277,9 +362,9 @@ namespace e_Book.Controllers
                     TempData["Error"] = $"הספר '{book.Title}' אינו ניתן להשאלה.";
                 }
             }
+
             else if (transactionType == "buy")
             {
-                // הוספת רכישה ללא תלות במלאי
                 db.CartItems.Add(new CartItem
                 {
                     UserId = userId,
@@ -293,6 +378,7 @@ namespace e_Book.Controllers
 
             return RedirectToAction("Index", "Books");
         }
+
 
 
 
@@ -338,6 +424,11 @@ namespace e_Book.Controllers
         public ActionResult ProcessPayment() // לתשלום בכרטיס אשראי
         {
             int userId = GetLoggedInUserId();
+            if (userId <= 0)
+            {
+                TempData["Error"] = "עליך להתחבר כדי לבצע תשלום.";
+                return RedirectToAction("Login", "Account");
+            }
 
             // שליפת כל הפריטים בעגלה של המשתמש
             var cartItems = db.CartItems.Include(c => c.Book).Where(c => c.UserId == userId).ToList();
@@ -352,18 +443,14 @@ namespace e_Book.Controllers
 
             foreach (var item in cartItems)
             {
-                var book = db.Books.FirstOrDefault(b => b.BookId == item.BookId);
+                var book = db.Books.Find(item.BookId);
                 if (book == null)
                 {
                     TempData["Error"] = $"לא נמצא ספר עם מזהה {item.BookId}.";
                     continue;
                 }
 
-                if (book.AvailableCopies <= 0)
-                {
-                    TempData["Error"] = $"אין מספיק עותקים זמינים לספר '{book.Title}'.";
-                    return RedirectToAction("Index", "CartItems");
-                }
+
 
                 // שמירת השאלה או רכישה
                 if (item.TransactionType == "borrow")
@@ -377,27 +464,33 @@ namespace e_Book.Controllers
                         return RedirectToAction("Index", "CartItems");
                     }
 
-                    var borrow = new Borrow
+                    if (book.AvailableCopies <= 0)
+                    {
+                        TempData["Error"] = $"אין מספיק עותקים זמינים לספר '{book.Title}'.";
+                        return RedirectToAction("Index", "CartItems");
+                    }
+
+                    db.Borrows.Add(new Borrow
                     {
                         UserId = userId,
-                        BookId = item.BookId,
+                        BookId = book.BookId,
                         BorrowDate = DateTime.Now,
                         DueDate = DateTime.Now.AddDays(30),
                         IsReturned = false
-                    };
-                    db.Borrows.Add(borrow);
+                    });
+                    //db.Borrows.Add(borrow);
                     totalAmount += book.PriceBorrow * item.Quantity; // סכום כולל להשאלה
                 }
                 else if (item.TransactionType == "buy")
                 {
-                    var purchase = new Purchase
+                    db.Purchases.Add(new Purchase
                     {
                         UserId = userId,
-                        BookId = item.BookId,
+                        BookId = book.BookId,
                         PurchasePrice = book.PriceBuy,
                         PurchaseDate = DateTime.Now
-                    };
-                    db.Purchases.Add(purchase);
+                    });
+                    //db.Purchases.Add(purchase);
                     totalAmount += book.PriceBuy * item.Quantity; // סכום כולל לרכישה
                 }
 
@@ -407,7 +500,19 @@ namespace e_Book.Controllers
                     book.AvailableCopies--;
                 }
 
+                // שמירת תשלום
+                db.Payments.Add(new Payment
+                {
+                    UserId = userId,
+                    BookId = item.BookId,
+                    Amount = item.TransactionType == "buy" ? book.PriceBuy : book.PriceBorrow,
+                    PaymentMethod = "CreditCard",
+                    PaymentDate = DateTime.Now
+                });
+
             }
+
+
 
             // מחיקת כל הפריטים מהעגלה
             db.CartItems.RemoveRange(cartItems);
@@ -530,6 +635,12 @@ namespace e_Book.Controllers
                         if (activeBorrowsCount >= 3)
                         {
                             TempData["Error"] = "לא ניתן להשאיל יותר מ-3 ספרים בו-זמנית.";
+                            return RedirectToAction("Index", "CartItems");
+                        }
+
+                        if (book.AvailableCopies <= 0)
+                        {
+                            TempData["Error"] = $"אין מספיק עותקים זמינים לספר '{book.Title}'.";
                             return RedirectToAction("Index", "CartItems");
                         }
 

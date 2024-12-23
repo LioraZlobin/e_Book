@@ -34,7 +34,17 @@ namespace e_Book.Controllers
             {
                 ViewBag.UserAge = 0; // משתמש לא מחובר
             }
-            return View(db.Books.ToList());
+
+            var books = db.Books.ToList();
+
+            // טעינת משובים עם פרטי המשתמש
+            ViewBag.ServiceFeedbacks = db.Feedbacks
+                .Include(f => f.User) // טעינת המידע של המשתמש
+                .Where(f => f.IsPurchaseFeedback)
+                .OrderByDescending(f => f.FeedbackDate)
+                .ToList();
+
+            return View(books);
         }
 
 
@@ -51,15 +61,23 @@ namespace e_Book.Controllers
         [AllowAnonymous]
         public ActionResult Details(int? id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Book book = db.Books.Find(id);
+            var book = db.Books.Find(id);
             if (book == null)
-            {
                 return HttpNotFound();
-            }
+
+            var userId = GetLoggedInUserId();
+
+            // בדיקה אם המשתמש יכול לדרג את הספר
+            var canRate = db.Borrows.Any(b => b.UserId == userId && b.BookId == id && !b.IsReturned) ||
+                          db.Purchases.Any(p => p.UserId == userId && p.BookId == id);
+
+            ViewBag.CanRate = canRate;
+
+            // טעינת משובים לספר
+            ViewBag.BookFeedbacks = db.Feedbacks
+                .Where(f => f.BookId == id && !f.IsPurchaseFeedback)
+                .ToList();
+
             return View(book);
         }
 
@@ -79,9 +97,6 @@ namespace e_Book.Controllers
             return View(newBook);
         }
 
-        // POST: Books/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Create([Bind(Include = "BookId,Title,Author,Publisher,PriceBuy,PriceBorrow,AvailableCopies,Format,YearPublished,IsBorrowable, AgeRestriction,ImageUrl,Synopsis, DownloadLink")] Book book)
@@ -90,16 +105,18 @@ namespace e_Book.Controllers
             {
                 ModelState.AddModelError("PriceBorrow", "מחיר ההשאלה חייב להיות קטן ממחיר הקנייה.");
             }
-            // בדיקה אם ספר עם אותם פרטים כבר קיים
+
+            // בדיקה אם ספר עם אותם פרטים כבר קיים (כותרת, מחבר, הוצאה לאור ושנת הוצאה)
             bool isBookExists = db.Books.Any(b =>
                 b.Title.Equals(book.Title, StringComparison.OrdinalIgnoreCase) &&
                 b.Author.Equals(book.Author, StringComparison.OrdinalIgnoreCase) &&
-                b.Publisher.Equals(book.Publisher, StringComparison.OrdinalIgnoreCase));
+                b.Publisher.Equals(book.Publisher, StringComparison.OrdinalIgnoreCase) &&
+                b.YearPublished == book.YearPublished); // הוספת תנאי לשנת ההוצאה
 
             if (isBookExists)
             {
                 // הוספת הודעת שגיאה לתצוגה
-                TempData["Error"] = "לא ניתן להוסיף ספר. ספר עם אותו מחבר, כותרת והוצאה כבר קיים במערכת.";
+                TempData["Error"] = "לא ניתן להוסיף ספר. ספר עם אותו מחבר, כותרת, הוצאה ושנת הוצאה כבר קיים במערכת.";
                 return View(book);
             }
 
@@ -225,6 +242,13 @@ namespace e_Book.Controllers
                 .Where(b => b.Title.Contains(query) || b.Author.Contains(query) || b.Publisher.Contains(query))
                 .ToList();
 
+            // אתחול ViewBag.ServiceFeedbacks
+            ViewBag.ServiceFeedbacks = db.Feedbacks
+                .Include(f => f.User) // טוען את המידע של המשתמש
+                .Where(f => f.IsPurchaseFeedback)
+                .OrderByDescending(f => f.FeedbackDate)
+                .ToList();
+
             return View("Index", books); // השתמשי בתצוגת Index כדי להציג את התוצאות
         }
 
@@ -248,6 +272,13 @@ namespace e_Book.Controllers
                 books = books.Where(b => b.Format == format);
             }
 
+            // אתחול ViewBag.ServiceFeedbacks
+            ViewBag.ServiceFeedbacks = db.Feedbacks
+                .Include(f => f.User) // טוען את המידע של המשתמש
+                .Where(f => f.IsPurchaseFeedback)
+                .OrderByDescending(f => f.FeedbackDate)
+                .ToList();
+
             return View("Index", books.ToList()); // הצגת התוצאות בתצוגת Index
         }
 
@@ -264,16 +295,27 @@ namespace e_Book.Controllers
                 case "price_desc":
                     books = books.OrderByDescending(b => b.PriceBuy);
                     break;
+                case "popularity":
+                    books = books.OrderByDescending(b => b.Popularity); // הוספת סינון לפי פופולריות
+                    break;
                 case "year":
                     books = books.OrderByDescending(b => b.YearPublished);
                     break;
                 case "year_asc":
-                    books = books.OrderBy(b => b.YearPublished); 
+                    books = books.OrderBy(b => b.YearPublished);
                     break;
                 default:
                     books = books.OrderBy(b => b.Title);
                     break;
+
             }
+
+            // אתחול ViewBag.ServiceFeedbacks
+            ViewBag.ServiceFeedbacks = db.Feedbacks
+                .Include(f => f.User) // טוען את המידע של המשתמש
+                .Where(f => f.IsPurchaseFeedback)
+                .OrderByDescending(f => f.FeedbackDate)
+                .ToList();
 
             return View("Index", books.ToList());
         }
@@ -285,7 +327,126 @@ namespace e_Book.Controllers
                 .Where(b => b.PreviousPrice.HasValue && b.DiscountEndDate.HasValue && b.DiscountEndDate > DateTime.Now)
                 .ToList();
 
+            // אתחול ViewBag.ServiceFeedbacks
+            ViewBag.ServiceFeedbacks = db.Feedbacks
+                .Include(f => f.User) // טוען את המידע של המשתמש
+                .Where(f => f.IsPurchaseFeedback)
+                .OrderByDescending(f => f.FeedbackDate)
+                .ToList();
+
             return View("Index", discountedBooks); // מציג את הספרים בתצוגת Index
+        }
+
+
+        [AllowAnonymous]
+        public ActionResult FilterByGenre(string genre)
+        {
+            if (string.IsNullOrEmpty(genre))
+            {
+                return RedirectToAction("Index");
+            }
+
+            // סינון הספרים לפי הז'אנר שנבחר (תמיכה בעברית, אי-תלות ברישיות)
+            var booksByGenre = db.Books
+                .Where(b => b.Genre.Trim().Equals(genre.Trim(), StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            // אתחול ViewBag.ServiceFeedbacks
+            ViewBag.ServiceFeedbacks = db.Feedbacks
+                .Include(f => f.User) // טוען את המידע של המשתמש
+                .Where(f => f.IsPurchaseFeedback)
+                .OrderByDescending(f => f.FeedbackDate)
+                .ToList();
+
+            return View("Index", booksByGenre);
+        }
+
+        [AllowAnonymous]
+        public ActionResult FilterByPrice(decimal? minPrice, decimal? maxPrice)
+        {
+            var books = db.Books.AsQueryable();
+
+            // בדיקת תנאים עבור טווחי המחירים
+            if (minPrice.HasValue)
+            {
+                books = books.Where(b => b.PriceBuy >= minPrice.Value);
+            }
+
+            if (maxPrice.HasValue)
+            {
+                books = books.Where(b => b.PriceBuy <= maxPrice.Value);
+            }
+
+            // אתחול ViewBag.ServiceFeedbacks
+            ViewBag.ServiceFeedbacks = db.Feedbacks
+                .Include(f => f.User) // טוען את המידע של המשתמש
+                .Where(f => f.IsPurchaseFeedback)
+                .OrderByDescending(f => f.FeedbackDate)
+                .ToList();
+
+            return View("Index", books.ToList());
+        }
+        [AllowAnonymous]
+        public ActionResult FilterByBorrowPrice(decimal? minPrice, decimal? maxPrice)
+        {
+            var books = db.Books.AsQueryable();
+
+            // סינון רק ספרים שניתן להשאיל אותם
+            books = books.Where(b => b.IsBorrowable == true);
+
+            // סינון לפי מחיר ההשאלה (PriceBorrow)
+            if (minPrice.HasValue)
+            {
+                books = books.Where(b => b.PriceBorrow >= minPrice.Value); // מינימום מחיר השאלה
+            }
+
+            if (maxPrice.HasValue)
+            {
+                books = books.Where(b => b.PriceBorrow <= maxPrice.Value); // מקסימום מחיר השאלה
+            }
+
+            // אתחול ViewBag.ServiceFeedbacks
+            ViewBag.ServiceFeedbacks = db.Feedbacks
+                .Include(f => f.User) // טוען את המידע של המשתמש
+                .Where(f => f.IsPurchaseFeedback)
+                .OrderByDescending(f => f.FeedbackDate)
+                .ToList();
+
+            return View("Index", books.ToList());
+        }
+
+
+
+        [AllowAnonymous]
+        public ActionResult FilterByAvailability(string availability)
+        {
+            if (string.IsNullOrEmpty(availability))
+            {
+                return RedirectToAction("Index");
+            }
+
+            IQueryable<Book> books = db.Books;
+
+            switch (availability.ToLower())
+            {
+                case "borrow":
+                    books = books.Where(b => b.IsBorrowable == true); // ספרים להשאלה בלבד
+                    break;
+                case "buy":
+                    books = books.Where(b => b.IsBorrowable == false); // ספרים לקנייה בלבד (IsBorrowable == false או 0)
+                    break;
+                default:
+                    return RedirectToAction("Index");
+            }
+
+            // אתחול ViewBag.ServiceFeedbacks
+            ViewBag.ServiceFeedbacks = db.Feedbacks
+                .Include(f => f.User) // טוען את המידע של המשתמש
+                .Where(f => f.IsPurchaseFeedback)
+                .OrderByDescending(f => f.FeedbackDate)
+                .ToList();
+
+            return View("Index", books.ToList());
         }
 
 
@@ -366,6 +527,138 @@ namespace e_Book.Controllers
                 return RedirectToAction("UserLibrary", "Borrows");
             }
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult AddFeedback(int BookId, string Content, int Rating, bool IsPurchaseFeedback)
+        {
+            var userId = GetLoggedInUserId();
+
+            if (userId <= 0)
+            {
+                TempData["Error"] = "משתמש לא מחובר.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            // בדיקה אם המשתמש יכול להוסיף משוב על ספר
+            if (!IsPurchaseFeedback)
+            {
+                var hasAccess = db.Borrows.Any(b => b.UserId == userId && b.BookId == BookId && !b.IsReturned) ||
+                                db.Purchases.Any(p => p.UserId == userId && p.BookId == BookId);
+
+                if (!hasAccess)
+                {
+                    TempData["Error"] = "רק משתמשים שרכשו או השאילו את הספר יכולים לדרג אותו.";
+                    return RedirectToAction("Details", new { id = BookId });
+                }
+            }
+
+            // שמירת המשוב
+            var feedback = new Feedback
+            {
+                UserId = userId,
+                BookId = BookId, // דירוג רכישה לא מחובר לספר
+                Content = Content,
+                Rating = Rating,
+                FeedbackDate = DateTime.Now,
+                IsPurchaseFeedback = IsPurchaseFeedback
+            };
+
+            db.Feedbacks.Add(feedback);
+            db.SaveChanges();
+
+            TempData["Success"] = "המשוב שלך נשמר בהצלחה!";
+            return RedirectToAction(IsPurchaseFeedback ? "Index" : "Details", new { id = BookId });
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult AddServiceFeedback(string Content, int Rating)
+        {
+            var userId = GetLoggedInUserId();
+
+            if (userId <= 0)
+            {
+                TempData["Error"] = "משתמש לא מחובר.";
+                return RedirectToAction("Index");
+            }
+
+            // בדיקה אם יש לפחות ספר אחד בספריה האישית (מושאל או נרכש)
+            bool hasBooksInLibrary = db.Borrows.Any(b => b.UserId == userId && !b.IsReturned) ||
+                                     db.Purchases.Any(p => p.UserId == userId);
+
+            if (!hasBooksInLibrary)
+            {
+                TempData["Error"] = "רק משתמשים עם ספרים בספרייה האישית יכולים להוסיף חוות דעת.";
+                return RedirectToAction("Index");
+            }
+
+            // שמירת חוות דעת כללית
+            var feedback = new Feedback
+            {
+                UserId = userId,
+                Content = Content,
+                Rating = Rating,
+                FeedbackDate = DateTime.Now,
+                IsPurchaseFeedback = true
+            };
+
+            db.Feedbacks.Add(feedback);
+            db.SaveChanges();
+
+            TempData["Success"] = "חוות הדעת שלך נשמרה בהצלחה!";
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult BuyNow(int bookId)
+        {
+            var userId = GetLoggedInUserId();
+
+            // בדיקה אם המשתמש מחובר
+            if (userId <= 0)
+            {
+                TempData["Error"] = "עליך להתחבר כדי לבצע רכישה.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            // בדיקה אם הספר קיים
+            var book = db.Books.FirstOrDefault(b => b.BookId == bookId);
+            if (book == null)
+            {
+                TempData["Error"] = "הספר לא נמצא.";
+                return RedirectToAction("Index");
+            }
+
+            // בדיקה אם הספר כבר נמצא בספרייה האישית של המשתמש
+            bool isInLibrary = db.Purchases.Any(p => p.UserId == userId && p.BookId == bookId) ||
+                               db.Borrows.Any(b => b.UserId == userId && b.BookId == bookId && !b.IsReturned);
+
+            if (isInLibrary)
+            {
+                TempData["Error"] = "הספר כבר נמצא בספרייה האישית שלך";
+                return RedirectToAction("Index");
+            }
+
+            // הוספת הספר ישירות לעגלת הקניות
+            var cartItem = new CartItem
+            {
+                UserId = userId,
+                BookId = bookId,
+                Quantity = 1, // ספר אחד כברירת מחדל
+                TransactionType="buy"
+            };
+
+            db.CartItems.Add(cartItem);
+            db.SaveChanges();
+
+            // הפניה לדף התשלום (Checkout)
+            return RedirectToAction("Checkout", "CartItems", new { bookId, transactionType = "buy" });
+        }
+
+
 
 
 

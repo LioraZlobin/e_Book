@@ -13,8 +13,9 @@ public class EmailReminderJob : IJob
         // קריאה למחלקת BorrowsController לצורך שליחת תזכורות
         var borrowController = new e_Book.Controllers.BorrowsController();
 
-        // קריאה לפונקציה לשליחת מיילים
+        // קריאה לפונקציה לשליחת מיילים ומחיקת ספרים מושאלים שפג תוקפם
         borrowController.SendReminderEmails();
+        borrowController.ProcessExpiredBorrows();
 
         return Task.CompletedTask;
     }

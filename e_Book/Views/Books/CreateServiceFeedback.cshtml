@@ -1,0 +1,26 @@
+﻿@{
+    ViewBag.Title = "הוסף חוות דעת על השירות";
+}
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">הוסף חוות דעת על חוויית הרכישה</h2>
+
+    <form action="@Url.Action("CreateServiceFeedback", "Books")" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="form-group">
+            <label>דירוג (1-5):</label>
+            <input type="number" name="Rating" min="1" max="5" class="form-control" required />
+        </div>
+
+        <div class="form-group">
+            <label>הערה:</label>
+            <textarea name="Content" rows="4" class="form-control" placeholder="כתוב כאן את חוות הדעת שלך..." required></textarea>
+        </div>
+
+        <div class="text-center mt-3">
+            <button type="submit" class="btn btn-primary">שלח</button>
+            <a href="@Url.Action("Index", "Books")" class="btn btn-secondary">חזור</a>
+        </div>
+    </form>
+</div>

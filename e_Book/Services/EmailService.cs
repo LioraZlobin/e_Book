@@ -11,8 +11,8 @@ namespace e_Book.Services
     {
         private readonly string _smtpHost = "sandbox.smtp.mailtrap.io"; // כתובת ה-SMTP של Mailtrap
         private readonly int _smtpPort = 2525; // פורט של Mailtrap
-        private readonly string _smtpUser = "615d0fce00b4ad"; // שם המשתמש שלך ב-Mailtrap
-        private readonly string _smtpPass = "be99d5cf189de0"; // סיסמת ה-API שלך ב-Mailtrap
+        private readonly string _smtpUser = "ba30297abe071f"; // שם המשתמש שלך ב-Mailtrap
+        private readonly string _smtpPass = "54defb45118a6e"; // סיסמת ה-API שלך ב-Mailtrap
         private readonly string _fromEmail = "admin@example.com"; // כתובת דוא"ל לשולח (Fake Email)
 
         public void SendEmail(string toEmail, string subject, string body)
