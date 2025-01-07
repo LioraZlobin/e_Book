@@ -1,13 +1,20 @@
 ﻿@using (Html.BeginForm())
 {
     <h2>כניסה</h2>
+
+    <!-- הצגת הודעות שגיאה -->
+    if (!string.IsNullOrEmpty(ViewBag.Error))
+    {
+        <div class="alert alert-danger">@ViewBag.Error</div>
+    }
+
     <div>
         <label>אימייל:</label>
-        <input type="email" name="email" class="form-control" />
+        <input type="email" name="email" class="form-control" required />
     </div>
     <div>
         <label>סיסמה:</label>
-        <input type="password" name="password" class="form-control" />
+        <input type="password" name="password" class="form-control" required />
     </div>
-    <button type="submit" class="btn btn-primary">התחבר</button>
+    <button type="submit" class="btn btn-primary mt-3">התחבר</button>
 }

@@ -9,6 +9,7 @@ using System.Web.Mvc;
 using eBookLibrary.Models;
 using e_Book.Models;
 using e_Book.Services;
+using System.Threading.Tasks;
 
 namespace e_Book.Controllers
 {
@@ -258,15 +259,23 @@ namespace e_Book.Controllers
                      <div dir='rtl' style='text-align:right; font-family:Arial, sans-serif;'>
                           <h2>הספר '{book.Title}' זמין להשאלה</h2>
                           <p>שלום {user.Name},</p>
-                          <p>הספר שחיכית לו חזר למלאי. מהרו לבצע השאלה לפני שיאזל.</p>
+                          <p>הספר שחיכית לו חזר למלאי. יש לך שעתיים לבצע את ההשאלה.</p>
                           <p>שימו לב: הספר יוקצה למי שישלים את תהליך ההשאלה ראשון.</p>
                           <p>תודה,<br/>צוות הספרייה</p>
                      </div>";
 
                         _emailService.SendEmail(user.Email, subject, body);
+                        // עדכון זמן תפוגה למשתמשים ברשימת ההמתנה
+                        waitingUser.ExpirationTime = DateTime.Now.AddMinutes(2);
                     }
                 }
                 db.SaveChanges();
+                // תזמון משימה לבדוק תוקף
+                Task.Delay(TimeSpan.FromMinutes(2)).ContinueWith(_ =>
+                {
+                    RemoveExpiredWaitlistEntries(book.BookId);
+                });
+
                 TempData["Success"] = "הספר הוחזר בהצלחה ונשלחו הודעות לממתינים.";
             }
             else if (bookId.HasValue)
@@ -294,6 +303,31 @@ namespace e_Book.Controllers
             db.SaveChanges();
             return RedirectToAction("UserLibrary");
         }
+
+
+        private void RemoveExpiredWaitlistEntries(int bookId)
+        {
+            using (var dbContext = new LibraryDbContext())
+            {
+                var book = dbContext.Books.FirstOrDefault(b => b.BookId == bookId);
+                if (book == null)
+                {
+                    // הטיפול במקרה שהספר לא נמצא
+                    return;
+                }
+
+                var expiredEntries = dbContext.WaitingLists
+                    .Where(w => w.BookId == bookId && w.ExpirationTime < DateTime.Now)
+                    .ToList();
+
+                if (expiredEntries.Any())
+                {
+                    dbContext.WaitingLists.RemoveRange(expiredEntries);
+                    dbContext.SaveChanges();
+                }
+            }
+        }
+
 
 
 

@@ -23,43 +23,55 @@ namespace e_Book.Controllers
         [AllowAnonymous]
         public ActionResult Login(string email, string password)
         {
-            var user = db.Users.FirstOrDefault(u => u.Email == email && u.Password == password);
+            var user = db.Users.FirstOrDefault(u => u.Email == email);
+
             if (user != null)
             {
-                FormsAuthenticationTicket ticket = new FormsAuthenticationTicket(
-                    1,
-                    user.Email,
-                    DateTime.Now,
-                    DateTime.Now.AddMinutes(30),
-                    false,
-                    user.Role, // שמירת התפקיד ב-Ticket
-                    FormsAuthentication.FormsCookiePath
-                );
-
-                string encryptedTicket = FormsAuthentication.Encrypt(ticket);
-                HttpCookie cookie = new HttpCookie(FormsAuthentication.FormsCookieName, encryptedTicket);
-                Response.Cookies.Add(cookie);
-
-                // שמירת התפקיד ב-Session
-                Session["Role"] = user.Role;
-                Session["UserId"] = user.UserId;
-                Session["UserName"] = user.Name;
-
-
-                // הפנייה לפי תפקיד
-                if (user.Role == "Admin")
+                if (user.Password == password)
                 {
-                    return RedirectToAction("AdminDashboard", "Account");
+                    // יצירת כרטיסייה (Ticket) עבור FormsAuthentication
+                    FormsAuthenticationTicket ticket = new FormsAuthenticationTicket(
+                        1,
+                        user.Email,
+                        DateTime.Now,
+                        DateTime.Now.AddMinutes(30),
+                        false,
+                        user.Role, // שמירת התפקיד ב-Ticket
+                        FormsAuthentication.FormsCookiePath
+                    );
+
+                    string encryptedTicket = FormsAuthentication.Encrypt(ticket);
+                    HttpCookie cookie = new HttpCookie(FormsAuthentication.FormsCookieName, encryptedTicket);
+                    Response.Cookies.Add(cookie);
+
+                    // שמירת התפקיד והפרטים ב-Session
+                    Session["Role"] = user.Role;
+                    Session["UserId"] = user.UserId;
+                    Session["UserName"] = user.Name;
+
+                    // הפנייה לפי תפקיד
+                    if (user.Role == "Admin")
+                    {
+                        return RedirectToAction("AdminDashboard", "Account");
+                    }
+                    else
+                    {
+                        return RedirectToAction("Index", "Books");
+                    }
                 }
                 else
                 {
-                    return RedirectToAction("Index", "Books");
+                    // סיסמה שגויה
+                    ViewBag.Error = "סיסמה שגויה. נסה שוב.";
+                    return View();
                 }
             }
 
-            ViewBag.Error = "שם משתמש או סיסמה אינם נכונים";
+            // משתמש לא קיים
+            ViewBag.Error = "אימייל זה לא נמצא במערכת. אנא נסה שוב.";
             return View();
         }
+
 
         public ActionResult AdminDashboard()
         {
@@ -100,6 +112,15 @@ namespace e_Book.Controllers
                 return View();
             }
 
+            // בדיקת חוקיות הסיסמה
+            if (password.Length > 10 ||
+                !System.Text.RegularExpressions.Regex.IsMatch(password, @"^[a-zA-Z0-9]+$") || // רק באנגלית ומספרים
+                !System.Text.RegularExpressions.Regex.IsMatch(password, @"\d")) // לפחות מספר אחד
+            {
+                ViewBag.Error = "הסיסמה חייבת להיות באנגלית, לכלול לפחות מספר אחד, ואורכה לא יעלה על 10 תווים.";
+                return View();
+            }
+
             var existingUser = db.Users.FirstOrDefault(u => u.Email == email);
             if (existingUser != null)
             {
@@ -124,6 +145,7 @@ namespace e_Book.Controllers
 
             return RedirectToAction("Index", "Books");
         }
+
 
     }
 }

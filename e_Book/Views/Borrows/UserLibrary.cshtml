@@ -72,14 +72,14 @@ else
                   
 
                     <!-- כפתור הורדת ספר -->
-                    @if (!string.IsNullOrEmpty(item.DownloadLink))
+                    @*@if (!string.IsNullOrEmpty(item.DownloadLink))
                     {
                         <a href="@Url.Action("DownloadBook", "Borrows", new { bookId = item.BookId })" class="btn btn-success">הורד ספר</a>
                     }
                     else
                     {
                         <span class="text-danger">לא נמצא קישור להורדה לספר זה.</span>
-                    }
+                    }*@
                 </td>
             </tr>
         }

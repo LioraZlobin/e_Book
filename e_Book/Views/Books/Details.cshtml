@@ -4,6 +4,15 @@
     ViewBag.Title = "פרטי הספר";
 }
 
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger" id="message-box">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success" id="message-box">@TempData["Success"]</div>
+}
+
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -143,6 +152,17 @@
         </p>
     </div>
 
+    <div class="download-buttons">
+        <h5>הורד את הספר:</h5>
+        <a href="@Url.Action("DownloadFile", "Download", new { bookId = Model.BookId, format = "pdf" })" class="btn btn-primary">PDF</a>
+        <a href="@Url.Action("DownloadFile", "Download", new { bookId = Model.BookId, format = "epub" })" class="btn btn-primary">EPUB</a>
+        <a href="@Url.Action("DownloadFile", "Download", new { bookId = Model.BookId, format = "fb2" })" class="btn btn-primary">FB2</a>
+        <a href="@Url.Action("DownloadFile", "Download", new { bookId = Model.BookId, format = "mobi" })" class="btn btn-primary">MOBI</a>
+    </div>
+
+
+
+
     <!-- טופס הוספת דירוג על ספר -->
     @if (ViewBag.CanRate)
     {
@@ -160,6 +180,7 @@
             </form>
         </div>}
 
+
     <!-- הצגת משובים לספר -->
     <div class="mt-4">
         <h4>משובים לספר זה</h4>
@@ -172,6 +193,8 @@
                 <small>פורסם על ידי: @(feedback.User != null ? feedback.User.Name : "משתמש לא ידוע")<br /></small>
             </div>}
     </div>
+
+
 
     <!-- כפתורי ניווט -->
     <div class="form-actions">

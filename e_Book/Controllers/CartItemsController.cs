@@ -241,7 +241,6 @@ namespace e_Book.Controllers
             }
 
             // השאלה עם בדיקת עותקים זמינים
-            // השאלה עם בדיקת עותקים זמינים
             if (transactionType == "borrow")
             {
                 var activeBorrowsCount = db.Borrows.Count(b => b.UserId == userId && !b.IsReturned);
@@ -291,7 +290,14 @@ namespace e_Book.Controllers
                         {
                             if (userInWaitingList != null)
                             {
-                                if (waitingList.Take(3).Any(w => w.UserId == userId))
+                                if(userInWaitingList.ExpirationTime.HasValue && userInWaitingList.ExpirationTime < DateTime.Now)
+                                {
+                                    db.WaitingLists.Remove(userInWaitingList);
+                                    db.SaveChanges();
+                                    TempData["error"] = "תוקף ההמתנה שלך פג.";
+                                    return RedirectToAction("Index", "Books");
+                                }
+                                else if (waitingList.Take(3).Any(w => w.UserId == userId))
                                 {
                                     db.CartItems.Add(new CartItem
                                     {

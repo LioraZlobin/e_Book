@@ -9,6 +9,7 @@ using System.Web.Mvc;
 using eBookLibrary.Models;
 using e_Book.Models;
 using System.Web.Security;
+using System.IO;
 
 namespace e_Book.Controllers
 {
@@ -496,37 +497,50 @@ namespace e_Book.Controllers
             return RedirectToAction("Index");
         }
 
-        [Authorize]
-        public ActionResult DownloadBook(int bookId)
-        {
-            int userId = int.Parse(Session["UserId"].ToString());
+        //[Authorize]
+        //public ActionResult DownloadBook(int bookId)
+        //{
+        //    int userId = int.Parse(Session["UserId"].ToString());
 
-            // בדיקה אם המשתמש השאיל את הספר
-            bool isBorrowed = db.Borrows.Any(b => b.BookId == bookId && b.UserId == userId);
+        //    // בדיקה אם המשתמש השאיל או רכש את הספר
+        //    bool isBorrowed = db.Borrows.Any(b => b.BookId == bookId && b.UserId == userId);
+        //    bool isPurchased = db.Purchases.Any(p => p.BookId == bookId && p.UserId == userId);
 
-            // בדיקה אם המשתמש רכש את הספר
-            bool isPurchased = db.Purchases.Any(p => p.BookId == bookId && p.UserId == userId);
+        //    if (isBorrowed || isPurchased)
+        //    {
+        //        // שליפת הספר
+        //        var book = db.Books.FirstOrDefault(b => b.BookId == bookId);
+        //        if (book != null && !string.IsNullOrEmpty(book.DownloadLink))
+        //        {
+        //            return Redirect(book.DownloadLink); // הפניה לקישור ההורדה אם קיים
+        //        }
+        //        else
+        //        {
+        //            // יצירת קובץ PDF ריק
+        //            using (var ms = new MemoryStream())
+        //            {
+        //                using (var doc = new iTextSharp.text.Document())
+        //                {
+        //                    iTextSharp.text.pdf.PdfWriter.GetInstance(doc, ms);
+        //                    doc.Open();
+        //                    doc.Add(new iTextSharp.text.Paragraph("כותרת הספר: " + book.Title));
+        //                    doc.Add(new iTextSharp.text.Paragraph("מחבר: " + book.Author));
+        //                    doc.Add(new iTextSharp.text.Paragraph("הוצאה: " + book.Publisher));
+        //                    doc.Close();
+        //                }
 
-            if (isBorrowed || isPurchased)
-            {
-                // שליפת קישור ההורדה
-                var book = db.Books.FirstOrDefault(b => b.BookId == bookId);
-                if (book != null && !string.IsNullOrEmpty(book.DownloadLink))
-                {
-                    return Redirect(book.DownloadLink); // הפניה לקישור ההורדה
-                }
-                else
-                {
-                    TempData["Error"] = "לא נמצא קישור הורדה לספר זה.";
-                    return RedirectToAction("UserLibrary", "Borrows");
-                }
-            }
-            else
-            {
-                TempData["Error"] = "אין לך הרשאה להוריד ספר זה.";
-                return RedirectToAction("UserLibrary", "Borrows");
-            }
-        }
+        //                byte[] pdfBytes = ms.ToArray();
+        //                return File(pdfBytes, "application/pdf", $"{book.Title}.pdf");
+        //            }
+        //        }
+        //    }
+        //    else
+        //    {
+        //        TempData["Error"] = "אין לך הרשאה להוריד ספר זה.";
+        //        return RedirectToAction("UserLibrary", "Borrows");
+        //    }
+        //}
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -659,8 +673,60 @@ namespace e_Book.Controllers
         }
 
 
+        //[Authorize]
+        //public ActionResult DownloadEmptyFile(int bookId, string format)
+        //{
+        //    // שליפת מזהה המשתמש המחובר
+        //    var userId = GetLoggedInUserId();
+
+        //    // בדיקה אם המשתמש מחובר
+        //    if (userId <= 0)
+        //    {
+        //        TempData["Error"] = "עליך להתחבר כדי להוריד קובץ.";
+        //        return RedirectToAction("Login", "Account");
+        //    }
+
+        //    // בדיקה אם למשתמש יש הרשאה להוריד את הספר
+        //    bool hasAccess = db.Borrows.Any(b => b.BookId == bookId && b.UserId == userId && !b.IsReturned) ||
+        //         db.Purchases.Any(p => p.BookId == bookId && p.UserId == userId);
+
+        //    if (!hasAccess)
+        //    {
+        //        TempData["Error"] = "אין לך הרשאה להוריד את הספר הזה.";
+        //        return RedirectToAction("Index", "Books");
+        //    }
 
 
+        //    // יצירת קובץ ריק לפי הפורמט המבוקש
+        //    string fileName = $"Book_{bookId}.{format}";
+        //    string contentType = "";
+
+        //    // קביעת סוג התוכן (Content Type) לפי הפורמט
+        //    switch (format.ToLower())
+        //    {
+        //        case "pdf":
+        //            contentType = "application/pdf";
+        //            break;
+        //        case "fb2":
+        //            contentType = "application/x-fictionbook+xml";
+        //            break;
+        //        case "mobi":
+        //            contentType = "application/x-mobipocket-ebook";
+        //            break;
+        //        case "epub":
+        //            contentType = "application/epub+zip";
+        //            break;
+        //        default:
+        //            TempData["Error"] = "פורמט לא נתמך.";
+        //            return RedirectToAction("Index", "Books");
+        //    }
+
+        //    // יצירת תוכן הקובץ הריק
+        //    byte[] fileContent = new byte[0]; // קובץ ריק
+
+        //    // שליחת הקובץ להורדה
+        //    return File(fileContent, contentType, fileName);
+        //}
 
 
     }
