@@ -222,6 +222,30 @@ namespace e_Book.Controllers
                 return RedirectToAction("Index", "Books");
             }
 
+            // אם המשתמש בחר "כן" או "לא" להצטרף לרשימת ההמתנה
+            if (Request.Form["confirmWaitList"] == "yes")
+            {
+                var waitingList = db.WaitingLists.Where(w => w.BookId == bookId).OrderBy(w => w.Position).ToList();
+                var position = waitingList.Count + 1;
+
+                db.WaitingLists.Add(new WaitingList
+                {
+                    UserId = userId,
+                    BookId = bookId,
+                    Position = position,
+                    AddedDate = DateTime.Now
+                });
+
+                db.SaveChanges();
+                TempData["Success"] = $"נוספת לרשימת ההמתנה בתור מספר {position}.";
+                return RedirectToAction("Index", "Books");
+            }
+            else if (Request.Form["confirmWaitList"] == "no")
+            {
+                TempData["Info"] = "לא נוספת לרשימת ההמתנה.";
+                return RedirectToAction("Index", "Books");
+            }
+
             // בדיקה אם הספר כבר בעגלה
             var existingItem = db.CartItems.FirstOrDefault(c => c.UserId == userId && c.BookId == bookId);
             if (existingItem != null)
@@ -351,15 +375,28 @@ namespace e_Book.Controllers
                         else
                         {
                             var position = waitingList.Count + 1;
-                            db.WaitingLists.Add(new WaitingList
+                            int estimatedDays = waitingList.Count * 30; // כל משתמש מחזיק עד 30 ימים
+                            TempData["Info"] = $"הספר אינו זמין כרגע. ישנם {waitingList.Count} אנשים ברשימת ההמתנה. זמן משוער לחזרה: {estimatedDays} ימים.";
+                            TempData["Prompt"] = "האם תרצה להצטרף לרשימת ההמתנה?";
+                            TempData["BookId"] = bookId; // שמירת המידע של הספר להצגה ב-View
+
+                            // הוספת המשתמש לרשימת ההמתנה אם בחר "כן"
+                            if (Request.Form["confirmWaitList"] == "yes")
                             {
-                                UserId = userId,
-                                BookId = bookId,
-                                Position = position,
-                                AddedDate = DateTime.Now
-                            });
-                            db.SaveChanges();
-                            TempData["Info"] = $"הספר אינו זמין כרגע. אתה במקום {position} ברשימת ההמתנה.";
+                                db.WaitingLists.Add(new WaitingList
+                                {
+                                    UserId = userId,
+                                    BookId = bookId,
+                                    Position = position,
+                                    AddedDate = DateTime.Now
+                                });
+                                db.SaveChanges();
+                                TempData["Success"] = $"נוספת לרשימת ההמתנה בתור מספר {position}.";
+                            }
+                            else if (Request.Form["confirmWaitList"] == "no")
+                            {
+                                TempData["Info"] = "לא נוספת לרשימת ההמתנה.";
+                            }
                         }
                     }
                 }
