@@ -215,13 +215,14 @@ namespace e_Book.Controllers
             base.Dispose(disposing);
         }
 
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult ReturnBook(int? borrowId, int? bookId)
         {
             if (borrowId.HasValue)
             {
-                // הטיפול במקרה של החזרת ספר שהושאל
+                // טיפול בהחזרת ספר מושאל
                 var borrow = db.Borrows.FirstOrDefault(b => b.BorrowId == borrowId);
                 if (borrow == null || borrow.IsReturned)
                 {
@@ -232,66 +233,34 @@ namespace e_Book.Controllers
                 borrow.IsReturned = true; // סימון הספר כהוחזר
                 var book = db.Books.FirstOrDefault(b => b.BookId == borrow.BookId);
 
-
                 if (book == null)
                 {
                     TempData["Error"] = "הספר אינו קיים.";
                     return RedirectToAction("UserLibrary");
                 }
 
-                // הגדלת העותקים הזמינים
-                book.AvailableCopies++;
-
-                // שליפת 3 הראשונים ברשימת ההמתנה
-                var waitingUsers = db.WaitingLists
-                    .Where(w => w.BookId == book.BookId)
-                    .OrderBy(w => w.Position)
-                    .Take(3)
-                    .ToList();
-
-                foreach (var waitingUser in waitingUsers)
-                {
-                    var user = db.Users.FirstOrDefault(u => u.UserId == waitingUser.UserId);
-                    if (user != null && !string.IsNullOrEmpty(user.Email))
-                    {
-                        string subject = "הספר זמין להשאלה!";
-                        string body = $@"
-                     <div dir='rtl' style='text-align:right; font-family:Arial, sans-serif;'>
-                          <h2>הספר '{book.Title}' זמין להשאלה</h2>
-                          <p>שלום {user.Name},</p>
-                          <p>הספר שחיכית לו חזר למלאי. יש לך שעתיים לבצע את ההשאלה.</p>
-                          <p>במידה ולא תספיק או משתמש אחר ישאיל לפניך, תוסר מרשימת ההמתנה ותצטרך להיכנס אליה שוב</p>
-                          <p>תודה,<br/>צוות הספרייה</p>
-                     </div>";
-
-                        _emailService.SendEmail(user.Email, subject, body);
-                        // עדכון זמן תפוגה למשתמשים ברשימת ההמתנה
-                        waitingUser.ExpirationTime = DateTime.Now.AddMinutes(2);
-                    }
-                }
+                book.AvailableCopies++; // הגדלת העותקים הזמינים
                 db.SaveChanges();
-                // תזמון משימה לבדוק תוקף
-                Task.Delay(TimeSpan.FromMinutes(2)).ContinueWith(_ =>
-                {
-                    RemoveExpiredWaitlistEntries(book.BookId);
-                });
+
+                // הפעלת תהליך ניהול רשימת ההמתנה
+                Task.Run(() => ProcessWaitlist(book.BookId));
 
                 TempData["Success"] = "הספר הוחזר בהצלחה ונשלחו הודעות לממתינים.";
             }
             else if (bookId.HasValue)
             {
-                // הטיפול במקרה של החזרת ספר שנרכש (אם רלוונטי)
+                // טיפול במקרה של החזרת ספר שנרכש
                 int userId = GetCurrentUserId();
-
                 var purchasedBook = db.Purchases.FirstOrDefault(p => p.BookId == bookId && p.UserId == userId);
+
                 if (purchasedBook == null)
                 {
                     TempData["Error"] = "הספר אינו קיים או לא נרכש.";
                     return RedirectToAction("UserLibrary");
                 }
 
-                // מחיקת הרכישה
                 db.Purchases.Remove(purchasedBook);
+                db.SaveChanges();
                 TempData["Success"] = "הרכישה הוסרה מהספרייה האישית שלך.";
             }
             else
@@ -300,33 +269,215 @@ namespace e_Book.Controllers
                 return RedirectToAction("UserLibrary");
             }
 
-            db.SaveChanges();
             return RedirectToAction("UserLibrary");
         }
 
-
-        private void RemoveExpiredWaitlistEntries(int bookId)
+        private void ProcessWaitlist(int bookId)
         {
             using (var dbContext = new LibraryDbContext())
             {
                 var book = dbContext.Books.FirstOrDefault(b => b.BookId == bookId);
-                if (book == null)
-                {
-                    // הטיפול במקרה שהספר לא נמצא
-                    return;
-                }
+                if (book == null) return;
 
-                var expiredEntries = dbContext.WaitingLists
-                    .Where(w => w.BookId == bookId && w.ExpirationTime < DateTime.Now)
-                    .ToList();
-
-                if (expiredEntries.Any())
+                while (book.AvailableCopies > 0 && dbContext.WaitingLists.Any(w => w.BookId == bookId))
                 {
-                    dbContext.WaitingLists.RemoveRange(expiredEntries);
+                    var waitingUsers = dbContext.WaitingLists
+                        .Where(w => w.BookId == bookId)
+                        .OrderBy(w => w.Position)
+                        .Take(3)
+                        .ToList();
+
+                    if (!waitingUsers.Any()) break;
+
+                    foreach (var waitingUser in waitingUsers)
+                    {
+                        var user = dbContext.Users.FirstOrDefault(u => u.UserId == waitingUser.UserId);
+                        if (user != null && !string.IsNullOrEmpty(user.Email))
+                        {
+                            string subject = "הספר זמין להשאלה!";
+                            string body = $@"
+                        <div dir='rtl' style='text-align:right; font-family:Arial, sans-serif;'>
+                            <h2>הספר '{book.Title}' זמין להשאלה</h2>
+                            <p>שלום {user.Name},</p>
+                            <p>הספר שחיכית לו חזר למלאי. יש לך שעתיים לבצע את ההשאלה.</p>
+                            <p>תודה,<br/>צוות הספרייה</p>
+                        </div>";
+
+                            _emailService.SendEmail(user.Email, subject, body);
+                            waitingUser.ExpirationTime = DateTime.Now.AddMinutes(2);
+                        }
+                    }
+
+                    dbContext.SaveChanges();
+
+                    // המתנה של 2 דקות
+                    Task.Delay(TimeSpan.FromMinutes(2)).Wait();
+
+                    // מחיקת משתמשים שפג זמן ההמתנה שלהם
+                    var expiredEntries = dbContext.WaitingLists
+                        .Where(w => w.BookId == bookId && w.ExpirationTime < DateTime.Now)
+                        .ToList();
+
+                    if (expiredEntries.Any())
+                    {
+                        dbContext.WaitingLists.RemoveRange(expiredEntries);
+                        dbContext.SaveChanges();
+
+                        // עדכון מיקומים מחדש ברשימת ההמתנה
+                        var remainingUsers = dbContext.WaitingLists
+                            .Where(w => w.BookId == bookId)
+                            .OrderBy(w => w.Position)
+                            .ToList();
+
+                        for (int i = 0; i < remainingUsers.Count; i++)
+                        {
+                            remainingUsers[i].Position = i + 1;
+                        }
+
+                        dbContext.SaveChanges();
+                    }
+
+                    // עדכון עותקים אם מישהו ביצע השאלה
+                    var borrowedUsers = dbContext.Borrows
+                        .Where(b => b.BookId == bookId && !b.IsReturned)
+                        .Select(b => b.UserId)
+                        .ToList();
+
+                    book.AvailableCopies -= borrowedUsers.Count;
                     dbContext.SaveChanges();
                 }
             }
         }
+
+
+
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public ActionResult ReturnBook(int? borrowId, int? bookId)
+        //{
+        //    if (borrowId.HasValue)
+        //    {
+        //        // הטיפול במקרה של החזרת ספר שהושאל
+        //        var borrow = db.Borrows.FirstOrDefault(b => b.BorrowId == borrowId);
+        //        if (borrow == null || borrow.IsReturned)
+        //        {
+        //            TempData["Error"] = "הספר כבר הוחזר או אינו קיים.";
+        //            return RedirectToAction("UserLibrary");
+        //        }
+
+        //        borrow.IsReturned = true; // סימון הספר כהוחזר
+        //        var book = db.Books.FirstOrDefault(b => b.BookId == borrow.BookId);
+
+
+        //        if (book == null)
+        //        {
+        //            TempData["Error"] = "הספר אינו קיים.";
+        //            return RedirectToAction("UserLibrary");
+        //        }
+
+        //        // הגדלת העותקים הזמינים
+        //        book.AvailableCopies++;
+
+
+        //        // שליפת 3 הראשונים ברשימת ההמתנה
+        //        var waitingUsers = db.WaitingLists
+        //            .Where(w => w.BookId == book.BookId)
+        //            .OrderBy(w => w.Position)
+        //            .Take(3)
+        //            .ToList();
+
+        //        foreach (var waitingUser in waitingUsers)
+        //        {
+        //            var user = db.Users.FirstOrDefault(u => u.UserId == waitingUser.UserId);
+        //            if (user != null && !string.IsNullOrEmpty(user.Email))
+        //            {
+        //                string subject = "הספר זמין להשאלה!";
+        //                string body = $@"
+        //             <div dir='rtl' style='text-align:right; font-family:Arial, sans-serif;'>
+        //                  <h2>הספר '{book.Title}' זמין להשאלה</h2>
+        //                  <p>שלום {user.Name},</p>
+        //                  <p>הספר שחיכית לו חזר למלאי. יש לך שעתיים לבצע את ההשאלה.</p>
+        //                  <p>במידה ולא תספיק או משתמש אחר ישאיל לפניך, תוסר מרשימת ההמתנה ותצטרך להיכנס אליה שוב</p>
+        //                  <p>תודה,<br/>צוות הספרייה</p>
+        //             </div>";
+
+        //                _emailService.SendEmail(user.Email, subject, body);
+        //                // עדכון זמן תפוגה למשתמשים ברשימת ההמתנה
+        //                waitingUser.ExpirationTime = DateTime.Now.AddMinutes(2);
+        //            }
+        //        }
+        //        db.SaveChanges();
+        //        // תזמון משימה לבדוק תוקף
+        //        Task.Delay(TimeSpan.FromMinutes(2)).ContinueWith(_ =>
+        //        {
+        //            RemoveExpiredWaitlistEntries(book.BookId);
+        //        });
+
+        //        TempData["Success"] = "הספר הוחזר בהצלחה ונשלחו הודעות לממתינים.";
+        //    }
+        //    else if (bookId.HasValue)
+        //    {
+        //        // הטיפול במקרה של החזרת ספר שנרכש (אם רלוונטי)
+        //        int userId = GetCurrentUserId();
+
+        //        var purchasedBook = db.Purchases.FirstOrDefault(p => p.BookId == bookId && p.UserId == userId);
+        //        if (purchasedBook == null)
+        //        {
+        //            TempData["Error"] = "הספר אינו קיים או לא נרכש.";
+        //            return RedirectToAction("UserLibrary");
+        //        }
+
+        //        // מחיקת הרכישה
+        //        db.Purchases.Remove(purchasedBook);
+        //        TempData["Success"] = "הרכישה הוסרה מהספרייה האישית שלך.";
+        //    }
+        //    else
+        //    {
+        //        TempData["Error"] = "פרמטר לא תקין.";
+        //        return RedirectToAction("UserLibrary");
+        //    }
+
+        //    db.SaveChanges();
+        //    return RedirectToAction("UserLibrary");
+        //}
+
+
+
+        //private void RemoveExpiredWaitlistEntries(int bookId)
+        //{
+        //    using (var dbContext = new LibraryDbContext())
+        //    {
+        //        var book = dbContext.Books.FirstOrDefault(b => b.BookId == bookId);
+        //        if (book == null)
+        //        {
+        //            // הטיפול במקרה שהספר לא נמצא
+        //            return;
+        //        }
+
+        //        var expiredEntries = dbContext.WaitingLists
+        //            .Where(w => w.BookId == bookId && w.ExpirationTime < DateTime.Now)
+        //            .ToList();
+
+        //        if (expiredEntries.Any())
+        //        {
+        //            dbContext.WaitingLists.RemoveRange(expiredEntries);
+        //            dbContext.SaveChanges();
+        //        }
+
+        //        // עדכון המיקומים מחדש
+        //        var waitingList = dbContext.WaitingLists
+        //            .Where(w => w.BookId == bookId)
+        //            .OrderBy(w => w.Position)
+        //            .ToList();
+
+        //        for (int i = 0; i < waitingList.Count; i++)
+        //        {
+        //            waitingList[i].Position = i + 1; // עדכון מיקום חדש
+        //        }
+
+        //        dbContext.SaveChanges(); // שמירת השינויים
+        //    }
+        //}
 
 
 

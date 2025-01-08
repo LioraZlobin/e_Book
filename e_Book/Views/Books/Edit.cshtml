@@ -117,18 +117,12 @@
 
     <!-- עותקים זמינים -->
     <div class="form-group">
-        @Html.LabelFor(model => model.AvailableCopies, "עותקים זמינים")
+        @Html.LabelFor(model => model.AvailableCopies, "עותקים זמינים להשאלה")
         @Html.EditorFor(model => model.AvailableCopies, new { htmlAttributes = new { @class = "form-control" } })
         @Html.ValidationMessageFor(model => model.AvailableCopies, "", new { @class = "text-danger" })
     </div>
 
 
-    <!-- פורמט -->
-    <div class="form-group">
-        @Html.LabelFor(model => model.Format, "פורמט")
-        @Html.DropDownListFor(model => model.Format, new SelectList(new[] { "PDF", "EPUB", "MOBI", "FB2" }), "בחר פורמט", new { @class = "form-control" })
-        @Html.ValidationMessageFor(model => model.Format, "", new { @class = "text-danger" })
-    </div>
 
     <!-- ז'אנר -->
     <div class="form-group">
@@ -180,12 +174,7 @@
         @Html.ValidationMessageFor(model => model.ImageUrl, "", new { @class = "text-danger" })
     </div>
 
-    <!-- קישור הורדה -->
-    <div class="form-group">
-        @Html.LabelFor(model => model.DownloadLink, "קישור הורדה")
-        @Html.TextBoxFor(model => model.DownloadLink, new { @class = "form-control", placeholder = "הזן קישור להורדה" })
-        @Html.ValidationMessageFor(model => model.DownloadLink, "", new { @class = "text-danger" })
-    </div>
+    
 
     <!-- כפתור שמירה -->
     <div class="form-group text-center">

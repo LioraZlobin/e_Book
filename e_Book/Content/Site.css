@@ -457,3 +457,17 @@ h2, h3 {
         transform: scale(1.05);
     }
 
+.card {
+    background-color: #ffe6f2; /* צבע ורוד בהיר מאוד */
+    border: 1px solid #ffccd5; /* צבע גבול ורוד */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* צל קטן */
+    border-radius: 10px; /* פינות מעוגלות */
+    padding: 15px; /* ריווח פנימי */
+}
+
+body {
+    background-color: #FADADD;
+    margin: 0;
+    padding: 0;
+}
+
