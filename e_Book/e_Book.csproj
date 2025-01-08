@@ -574,77 +574,9 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\202412051757174_InitialCreate.cs" />
-    <Compile Include="Migrations\202412051757174_InitialCreate.designer.cs">
-      <DependentUpon>202412051757174_InitialCreate.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412052049528_AddIsReturnedToBorrow.cs" />
-    <Compile Include="Migrations\202412052049528_AddIsReturnedToBorrow.Designer.cs">
-      <DependentUpon>202412052049528_AddIsReturnedToBorrow.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412052202093_UpdateDatabase.cs" />
-    <Compile Include="Migrations\202412052202093_UpdateDatabase.Designer.cs">
-      <DependentUpon>202412052202093_UpdateDatabase.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412061258595_AddIdentityCardToUser.cs" />
-    <Compile Include="Migrations\202412061258595_AddIdentityCardToUser.Designer.cs">
-      <DependentUpon>202412061258595_AddIdentityCardToUser.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412071514374_AddPositionToWaitingList.cs" />
-    <Compile Include="Migrations\202412071514374_AddPositionToWaitingList.Designer.cs">
-      <DependentUpon>202412071514374_AddPositionToWaitingList.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412081327502_AddGenrePopularityPreviousPriceAndDiscountEndDateToBooks.cs" />
-    <Compile Include="Migrations\202412081327502_AddGenrePopularityPreviousPriceAndDiscountEndDateToBooks.Designer.cs">
-      <DependentUpon>202412081327502_AddGenrePopularityPreviousPriceAndDiscountEndDateToBooks.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412081415306_AddAgeRestrictionToBooks.cs" />
-    <Compile Include="Migrations\202412081415306_AddAgeRestrictionToBooks.Designer.cs">
-      <DependentUpon>202412081415306_AddAgeRestrictionToBooks.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412081422053_AddAgeToUser.cs" />
-    <Compile Include="Migrations\202412081422053_AddAgeToUser.Designer.cs">
-      <DependentUpon>202412081422053_AddAgeToUser.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412081434491_AddDefaultValueToAgeRestriction.cs" />
-    <Compile Include="Migrations\202412081434491_AddDefaultValueToAgeRestriction.Designer.cs">
-      <DependentUpon>202412081434491_AddDefaultValueToAgeRestriction.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412101755344_AddSynopsisFieldToBook.cs" />
-    <Compile Include="Migrations\202412101755344_AddSynopsisFieldToBook.Designer.cs">
-      <DependentUpon>202412101755344_AddSynopsisFieldToBook.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412101758545_AddImageUrlToBook.cs" />
-    <Compile Include="Migrations\202412101758545_AddImageUrlToBook.Designer.cs">
-      <DependentUpon>202412101758545_AddImageUrlToBook.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412101836270_AddBookAndUserRelationsToFeedback.cs" />
-    <Compile Include="Migrations\202412101836270_AddBookAndUserRelationsToFeedback.Designer.cs">
-      <DependentUpon>202412101836270_AddBookAndUserRelationsToFeedback.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412101943348_AddIsPurchaseFeedbackToFeedback.cs" />
-    <Compile Include="Migrations\202412101943348_AddIsPurchaseFeedbackToFeedback.Designer.cs">
-      <DependentUpon>202412101943348_AddIsPurchaseFeedbackToFeedback.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412102012019_AddDownloadLinkToBooks.cs" />
-    <Compile Include="Migrations\202412102012019_AddDownloadLinkToBooks.Designer.cs">
-      <DependentUpon>202412102012019_AddDownloadLinkToBooks.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412102025357_AddBookAndUserToPurchase.cs" />
-    <Compile Include="Migrations\202412102025357_AddBookAndUserToPurchase.Designer.cs">
-      <DependentUpon>202412102025357_AddBookAndUserToPurchase.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412131339239_AddCartItem.cs" />
-    <Compile Include="Migrations\202412131339239_AddCartItem.Designer.cs">
-      <DependentUpon>202412131339239_AddCartItem.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202412151940477_AddIsReminderSentToBorrows.cs" />
-    <Compile Include="Migrations\202412151940477_AddIsReminderSentToBorrows.Designer.cs">
-      <DependentUpon>202412151940477_AddIsReminderSentToBorrows.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202501061552331_AddExpirationTimeToWaitingList.cs" />
-    <Compile Include="Migrations\202501061552331_AddExpirationTimeToWaitingList.Designer.cs">
-      <DependentUpon>202501061552331_AddExpirationTimeToWaitingList.cs</DependentUpon>
+    <Compile Include="Migrations\202501081826487_InitialCreate.cs" />
+    <Compile Include="Migrations\202501081826487_InitialCreate.Designer.cs">
+      <DependentUpon>202501081826487_InitialCreate.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Book.cs" />
@@ -754,62 +686,6 @@
     <Folder Include="Views\Download\" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\202412051757174_InitialCreate.resx">
-      <DependentUpon>202412051757174_InitialCreate.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412052049528_AddIsReturnedToBorrow.resx">
-      <DependentUpon>202412052049528_AddIsReturnedToBorrow.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412052202093_UpdateDatabase.resx">
-      <DependentUpon>202412052202093_UpdateDatabase.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412061258595_AddIdentityCardToUser.resx">
-      <DependentUpon>202412061258595_AddIdentityCardToUser.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412071514374_AddPositionToWaitingList.resx">
-      <DependentUpon>202412071514374_AddPositionToWaitingList.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412081327502_AddGenrePopularityPreviousPriceAndDiscountEndDateToBooks.resx">
-      <DependentUpon>202412081327502_AddGenrePopularityPreviousPriceAndDiscountEndDateToBooks.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412081415306_AddAgeRestrictionToBooks.resx">
-      <DependentUpon>202412081415306_AddAgeRestrictionToBooks.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412081422053_AddAgeToUser.resx">
-      <DependentUpon>202412081422053_AddAgeToUser.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412081434491_AddDefaultValueToAgeRestriction.resx">
-      <DependentUpon>202412081434491_AddDefaultValueToAgeRestriction.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412101755344_AddSynopsisFieldToBook.resx">
-      <DependentUpon>202412101755344_AddSynopsisFieldToBook.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412101758545_AddImageUrlToBook.resx">
-      <DependentUpon>202412101758545_AddImageUrlToBook.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412101836270_AddBookAndUserRelationsToFeedback.resx">
-      <DependentUpon>202412101836270_AddBookAndUserRelationsToFeedback.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412101943348_AddIsPurchaseFeedbackToFeedback.resx">
-      <DependentUpon>202412101943348_AddIsPurchaseFeedbackToFeedback.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412102012019_AddDownloadLinkToBooks.resx">
-      <DependentUpon>202412102012019_AddDownloadLinkToBooks.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412102025357_AddBookAndUserToPurchase.resx">
-      <DependentUpon>202412102025357_AddBookAndUserToPurchase.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412131339239_AddCartItem.resx">
-      <DependentUpon>202412131339239_AddCartItem.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202412151940477_AddIsReminderSentToBorrows.resx">
-      <DependentUpon>202412151940477_AddIsReminderSentToBorrows.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202501061552331_AddExpirationTimeToWaitingList.resx">
-      <DependentUpon>202501061552331_AddExpirationTimeToWaitingList.cs</DependentUpon>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
     <Content Include="Scripts\jquery-3.4.1.slim.min.map" />
     <Content Include="Scripts\jquery-3.4.1.min.map" />
@@ -817,6 +693,11 @@
   <ItemGroup>
     <Analyzer Include="..\packages\Microsoft.CodeAnalysis.Analyzers.1.1.0\analyzers\dotnet\cs\Microsoft.CodeAnalysis.Analyzers.dll" />
     <Analyzer Include="..\packages\Microsoft.CodeAnalysis.Analyzers.1.1.0\analyzers\dotnet\cs\Microsoft.CodeAnalysis.CSharp.Analyzers.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Migrations\202501081826487_InitialCreate.resx">
+      <DependentUpon>202501081826487_InitialCreate.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

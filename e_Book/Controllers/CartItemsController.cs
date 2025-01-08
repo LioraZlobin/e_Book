@@ -14,6 +14,7 @@ using System.Text;
 
 namespace e_Book.Controllers
 {
+    [RequireHttps]
     public class CartItemsController : Controller
     {
         private LibraryDbContext db = new LibraryDbContext();

@@ -13,6 +13,7 @@ using System.IO;
 
 namespace e_Book.Controllers
 {
+    [RequireHttps]
     public class BooksController : Controller
     {
         private LibraryDbContext db = new LibraryDbContext();
@@ -107,6 +108,11 @@ namespace e_Book.Controllers
                 ModelState.AddModelError("PriceBorrow", "מחיר ההשאלה חייב להיות קטן ממחיר הקנייה.");
             }
 
+            // בדיקה אם IsBorrowable מסומן אך PriceBorrow לא הוזן
+            if (book.IsBorrowable&&book.PriceBorrow==0)
+            {
+                ModelState.AddModelError("PriceBorrow", "יש להזין מחיר השאלה עבור ספרים שניתנים להשאלה.");
+            }
             // בדיקה אם ספר עם אותם פרטים כבר קיים (כותרת, מחבר, הוצאה לאור ושנת הוצאה)
             bool isBookExists = db.Books.Any(b =>
                 b.Title.Equals(book.Title, StringComparison.OrdinalIgnoreCase) &&

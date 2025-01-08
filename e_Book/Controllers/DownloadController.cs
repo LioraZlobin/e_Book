@@ -7,6 +7,7 @@ using eBookLibrary.Models;
 
 namespace e_Book.Controllers
 {
+    [RequireHttps]
     public class DownloadController : Controller
     {
         private LibraryDbContext db = new LibraryDbContext();

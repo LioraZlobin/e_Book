@@ -7,13 +7,13 @@ namespace e_Book.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.1.3-40302")]
-    public sealed partial class AddExpirationTimeToWaitingList : IMigrationMetadata
+    public sealed partial class InitialCreate : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(AddExpirationTimeToWaitingList));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(InitialCreate));
         
         string IMigrationMetadata.Id
         {
-            get { return "202501061552331_AddExpirationTimeToWaitingList"; }
+            get { return "202501081826487_InitialCreate"; }
         }
         
         string IMigrationMetadata.Source

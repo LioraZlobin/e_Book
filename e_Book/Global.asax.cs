@@ -37,5 +37,13 @@ namespace e_Book
 
             scheduler.ScheduleJob(job, trigger);
         }
+        protected void Application_BeginRequest(object sender, EventArgs e)
+        {
+            if (!Request.IsSecureConnection)
+            {
+                string redirectUrl = Request.Url.ToString().Replace("http:", "https:");
+                Response.Redirect(redirectUrl);
+            }
+        }
     }
 }

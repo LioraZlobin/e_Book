@@ -4,6 +4,7 @@ using e_Book.Models;
 using e_Book.Services;
 using eBookLibrary.Models;
 
+[RequireHttps]
 public class HomeController : Controller
 {
     private LibraryDbContext db = new LibraryDbContext();

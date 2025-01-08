@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 
 namespace e_Book.Controllers
 {
+    [RequireHttps]
     public class BorrowsController : Controller
     {
         private LibraryDbContext db = new LibraryDbContext();

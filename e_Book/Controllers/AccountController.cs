@@ -9,6 +9,7 @@ using eBookLibrary.Models;
 
 namespace e_Book.Controllers
 {
+    [RequireHttps]
     public class AccountController : Controller
     {
         private LibraryDbContext db = new LibraryDbContext();

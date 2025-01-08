@@ -11,7 +11,8 @@ using e_Book.Models;
 
 namespace e_Book.Controllers
 {
-    
+    [RequireHttps]
+
     public class UsersController : Controller
     {
         private LibraryDbContext db = new LibraryDbContext();
