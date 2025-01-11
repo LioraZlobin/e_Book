@@ -510,7 +510,7 @@ namespace e_Book.Controllers
         {
             int userId = GetCurrentUserId();
 
-            // שליפת ספרים מושאלים
+            // Fetch borrowed books
             var borrowedBooks = db.Borrows
                 .Where(b => b.UserId == userId && !b.IsReturned)
                 .Select(b => new UserLibraryItem
@@ -526,7 +526,7 @@ namespace e_Book.Controllers
                 })
                 .ToList();
 
-            // שליפת ספרים שנרכשו
+            // Fetch purchased books
             var purchasedBooks = db.Purchases
                 .Where(p => p.UserId == userId)
                 .Select(p => new UserLibraryItem
@@ -540,11 +540,28 @@ namespace e_Book.Controllers
                 })
                 .ToList();
 
-            // שילוב הספרים המושאלים והרכושים לרשימה אחת
+            // Combine both lists
             var userLibrary = borrowedBooks.Union(purchasedBooks).ToList();
 
             return View(userLibrary);
         }
+        public ActionResult RunBorrowCleanup()
+        {
+            try
+            {
+                ProcessExpiredBorrows();
+                TempData["Success"] = "רענון הדף הצליח!";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "רענון הדף נכשל.";
+            }
+
+            return RedirectToAction("UserLibrary");
+        }
+
+
+
 
 
 
@@ -649,8 +666,7 @@ namespace e_Book.Controllers
 
         public void ProcessExpiredBorrows()
         {
-            try
-            {
+            
                 // שליפת כל ההשאלות שפג תוקפן ולא הוחזרו
                 var expiredBorrows = db.Borrows
                     .Where(b => !b.IsReturned && b.DueDate < DateTime.Now)
@@ -673,21 +689,10 @@ namespace e_Book.Controllers
                 db.SaveChanges();
 
                 TempData["Success"] = "התהליך לעדכון השאלות שפג תוקפן הושלם בהצלחה.";
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error in ProcessExpiredBorrows: {ex.Message}");
-                TempData["Error"] = "אירעה שגיאה בתהליך עדכון ההשאלות שפג תוקפן.";
-            }
+            
+            
         }
 
-
-        [HttpGet]
-        public ActionResult RunBorrowCleanup()
-        {
-            ProcessExpiredBorrows();
-            return Content("Borrow cleanup process completed successfully.");
-        }
 
 
     }

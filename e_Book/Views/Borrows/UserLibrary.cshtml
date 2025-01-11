@@ -7,6 +7,18 @@
 
 <h2>ספרייה אישית</h2>
 
+<!-- כפתור להרצת תהליך ניקוי -->
+<form action="/Borrows/RunBorrowCleanup" method="get" style="margin-bottom: 15px;">
+    <button type="submit" class="btn btn-primary">רענן דף ונקה השאלות שפג תוקפן</button>
+</form>
+
+<!-- הצגת הודעות הצלחה או שגיאה -->
+@if (TempData["Success"] != null)
+{
+<div class="alert alert-success">@TempData["Success"]</div>}
+@if (TempData["Error"] != null)
+{
+<div class="alert alert-danger">@TempData["Error"]</div>}
 <!-- הצגת הודעת שלום -->
 @if (userName != "אורח")
 {
@@ -21,15 +33,6 @@ else
     </div>
 }
 
-<!-- הודעות שגיאה או הצלחה -->
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
 
 <table class="table">
     <thead>
@@ -69,17 +72,17 @@ else
                             <button type="submit" class="btn btn-warning">מחק ספר</button>
                         </form>}
 
-                  
+
 
                     <!-- כפתור הורדת ספר -->
                     @*@if (!string.IsNullOrEmpty(item.DownloadLink))
-                    {
-                        <a href="@Url.Action("DownloadBook", "Borrows", new { bookId = item.BookId })" class="btn btn-success">הורד ספר</a>
-                    }
-                    else
-                    {
-                        <span class="text-danger">לא נמצא קישור להורדה לספר זה.</span>
-                    }*@
+                        {
+                            <a href="@Url.Action("DownloadBook", "Borrows", new { bookId = item.BookId })" class="btn btn-success">הורד ספר</a>
+                        }
+                        else
+                        {
+                            <span class="text-danger">לא נמצא קישור להורדה לספר זה.</span>
+                        }*@
                 </td>
             </tr>
         }
