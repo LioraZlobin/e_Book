@@ -31,17 +31,16 @@
 
 @if (TempData["Prompt"] != null && TempData["BookId"] != null)
 {
-    <div class="alert alert-warning">
-        <p>@TempData["Prompt"]</p>
-        <form method="post" action="@Url.Action("AddToCart", "CartItems")">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="bookId" value="@TempData["BookId"]" />
-            <button type="submit" name="confirmWaitList" value="yes" class="btn btn-primary">כן, הוסף אותי לרשימת ההמתנה</button>
-            <button type="submit" name="confirmWaitList" value="no" class="btn btn-secondary">לא, אני לא מעוניין</button>
-        </form>
-    </div>
+<div class="alert alert-warning">
+    <p>@TempData["Prompt"]</p>
+    <form method="post" action="@Url.Action("AddToCart", "CartItems")">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="bookId" value="@TempData["BookId"]" />
+        <button type="submit" name="confirmWaitList" value="yes" class="btn btn-primary">כן, הוסף אותי לרשימת ההמתנה</button>
+        <button type="submit" name="confirmWaitList" value="no" class="btn btn-secondary">לא, אני לא מעוניין</button>
+    </form>
+</div>
 }
-
 
 
 
@@ -114,9 +113,9 @@
 </div>
 
 
-    <p>
-        <a href="@Url.Action("Create", "Books")" class="btn btn-primary mx-1 mb-2">הוספת ספר חדש</a>
-    </p>
+<p>
+    <a href="@Url.Action("Create", "Books")" class="btn btn-primary mx-1 mb-2">הוספת ספר חדש</a>
+</p>
 
 
 
@@ -250,6 +249,13 @@
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-success btn-sm w-100">
                                     קנה עכשיו
+                                </button>
+                            </form>
+                            <!-- כפתור השאל עכשיו -->
+                            <form action="@Url.Action("BorrowNow", "Books", new { bookId = item.BookId })" method="post" class="mt-2">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-success btn-sm w-100">
+                                    השאל עכשיו
                                 </button>
                             </form>
                         }

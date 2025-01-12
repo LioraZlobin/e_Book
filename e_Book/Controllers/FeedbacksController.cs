@@ -127,46 +127,6 @@ namespace e_Book.Controllers
             base.Dispose(disposing);
         }
 
-        //// POST: Feedbacks/AddFeedback
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public ActionResult AddFeedback([Bind(Include = "FeedbackId,UserId,BookId,Content,Rating,FeedbackDate")] Feedback feedback)
-        //{
-        //    if (ModelState.IsValid)
-        //    {
-        //        feedback.UserId = (int)Session["UserId"]; // Assuming you store UserId in session
-        //        feedback.FeedbackDate = DateTime.Now;
-        //        db.Feedbacks.Add(feedback);
-        //        db.SaveChanges();
-        //        TempData["Success"] = "חוות הדעת נוספה בהצלחה!";
-        //        return RedirectToAction("Index", "Books");
-        //    }
-
-        //    TempData["Error"] = "שגיאה בהוספת חוות הדעת.";
-        //    return View(feedback);
-        //}
-
-        //// פעולה להצגת טופס הוספת חוות דעת
-        //public ActionResult AddFeedback(int bookId)
-        //{
-        //    // בדיקת הספר
-        //    var book = db.Books.Find(bookId);
-        //    if (book == null)
-        //    {
-        //        return HttpNotFound("ספר לא נמצא");
-        //    }
-
-        //    // יצירת מודל חוות דעת
-        //    var feedback = new Feedback
-        //    {
-        //        BookId = bookId,
-        //        FeedbackDate = DateTime.Now
-        //    };
-
-        //    ViewBag.BookTitle = book.Title;
-        //    return View(feedback); // ודא שקיים View בשם AddFeedback
-        //}
-
         // GET: Feedbacks/AddFeedback
         public ActionResult AddFeedback(int bookId)
         {
@@ -239,26 +199,6 @@ namespace e_Book.Controllers
             };
             return View(feedback);
         }
-
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public ActionResult AddPurchaseFeedback(Feedback feedback)
-        //{
-        //    if (ModelState.IsValid)
-        //    {
-        //        feedback.FeedbackDate = DateTime.Now;
-        //        feedback.UserId = int.Parse(Session["UserId"].ToString());
-        //        db.Feedbacks.Add(feedback);
-        //        db.SaveChanges();
-
-        //        TempData["Success"] = "חוות הדעת נשמרה בהצלחה!";
-        //        return RedirectToAction("UserLibrary", "Borrows");
-        //    }
-
-        //    return View(feedback);
-        //}
-
-
 
     }
 }

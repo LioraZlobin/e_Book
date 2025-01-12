@@ -101,7 +101,7 @@ namespace e_Book.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "BookId,Title,Author,Publisher,PriceBuy,PriceBorrow,AvailableCopies,Format,YearPublished,IsBorrowable, AgeRestriction,ImageUrl,Synopsis, DownloadLink")] Book book)
+        public ActionResult Create([Bind(Include = "BookId,Title,Author,Publisher,PriceBuy,PriceBorrow,PreviousPrice,AvailableCopies,Format,Genre,Popularity,YearPublished,IsBorrowable,DiscountEndDate,AgeRestriction,ImageUrl,Synopsis,DownloadLink")] Book book)
         {
             if (book.PriceBorrow >= book.PriceBuy)
             {
@@ -637,6 +637,53 @@ namespace e_Book.Controllers
             // הפניה לדף התשלום (Checkout)
             return RedirectToAction("Checkout", "CartItems", new { bookId, transactionType = "buy" });
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult BorrowNow(int bookId)
+        {
+            var userId = GetLoggedInUserId();
+
+            // בדיקה אם המשתמש מחובר
+            if (userId <= 0)
+            {
+                TempData["Error"] = "עליך להתחבר כדי לבצע השאלה.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            // בדיקה אם הספר קיים
+            var book = db.Books.FirstOrDefault(b => b.BookId == bookId);
+            if (book == null)
+            {
+                TempData["Error"] = "הספר לא נמצא.";
+                return RedirectToAction("Index");
+            }
+
+            // בדיקה אם הספר כבר נמצא בספרייה האישית של המשתמש
+            bool isInLibrary = db.Borrows.Any(b => b.UserId == userId && b.BookId == bookId && !b.IsReturned) ||
+                               db.Purchases.Any(p => p.UserId == userId && p.BookId == bookId);
+
+            if (isInLibrary)
+            {
+                TempData["Error"] = "הספר כבר נמצא בספרייה האישית שלך";
+                return RedirectToAction("Index");
+            }
+
+            // הוספת הספר ישירות לעגלת ההשאלות
+            var cartItem = new CartItem
+            {
+                UserId = userId,
+                BookId = bookId,
+                Quantity = 1, // ספר אחד כברירת מחדל
+                TransactionType = "borrow"
+            };
+
+            db.CartItems.Add(cartItem);
+            db.SaveChanges();
+
+            // הפניה לדף התשלום (Checkout)
+            return RedirectToAction("Checkout", "CartItems", new { bookId, transactionType = "borrow" });
+        }
+
 
 
     }

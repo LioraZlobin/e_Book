@@ -83,7 +83,7 @@
             <!-- ז'אנר -->
             <div class="form-group">
                 @Html.LabelFor(model => model.Genre, "ז'אנר")
-                @Html.DropDownListFor(model => model.Genre, new SelectList(new[] { "ילדים" ,"רומנטיקה", "אקשן", "דרמה", "קומדיה", "מדע בדיוני", "פנטזיה", "היסטוריה", "שירה" }), "בחר ז'אנר", new { @class = "form-control" })
+                @Html.DropDownListFor(model => model.Genre, new SelectList(new[] { "ילדים", "רומנטיקה", "אקשן", "דרמה", "קומדיה", "מתח", "מדע בדיוני", "פנטזיה", "אימה", "הרפתקאות", "היסטורי", "ביוגרפיה", "בלש", "חינוך", "שירה" }), "בחר ז'אנר", new { @class = "form-control" })
                 @Html.ValidationMessageFor(model => model.Genre, "", new { @class = "text-danger" })
             </div>
 
