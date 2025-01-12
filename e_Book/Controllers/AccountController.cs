@@ -112,16 +112,26 @@ namespace e_Book.Controllers
                 ViewBag.Error = "כל השדות חייבים להיות מלאים.";
                 return View();
             }
-
             // בדיקת חוקיות הסיסמה
-            if (password.Length > 10 ||
-                !System.Text.RegularExpressions.Regex.IsMatch(password, @"^[a-zA-Z0-9]+$") || // רק באנגלית ומספרים
-                !System.Text.RegularExpressions.Regex.IsMatch(password, @"\d")) // לפחות מספר אחד
+            if (password.Length > 10)
             {
-                ViewBag.Error = "הסיסמה חייבת להיות באנגלית, לכלול לפחות מספר אחד, ואורכה לא יעלה על 10 תווים.";
+                ViewBag.Error = "אורך הסיסמה חייב להיות לכל היותר 10 תווים.";
                 return View();
             }
 
+            if (!System.Text.RegularExpressions.Regex.IsMatch(password, @"[a-zA-Z]") || // לפחות אות אחת באנגלית
+                !System.Text.RegularExpressions.Regex.IsMatch(password, @"\d")) // לפחות מספר אחד
+            {
+                ViewBag.Error = "הסיסמה חייבת לכלול לפחות אות אחת באנגלית ולפחות מספר אחד.";
+                return View();
+            }
+
+            // בדיקה האם הסיסמה כוללת רק תווים באנגלית ומספרים
+            if (!System.Text.RegularExpressions.Regex.IsMatch(password, @"^[a-zA-Z0-9]+$"))
+            {
+                ViewBag.Error = "הסיסמה חייבת להיות מורכבת מתווים באנגלית ומספרים בלבד.";
+                return View();
+            }
             var existingUser = db.Users.FirstOrDefault(u => u.Email == email);
             if (existingUser != null)
             {

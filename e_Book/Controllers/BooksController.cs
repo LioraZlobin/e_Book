@@ -69,9 +69,8 @@ namespace e_Book.Controllers
 
             var userId = GetLoggedInUserId();
 
-            // בדיקה אם המשתמש יכול לדרג את הספר
-            var canRate = db.Borrows.Any(b => b.UserId == userId && b.BookId == id && !b.IsReturned) ||
-                          db.Purchases.Any(p => p.UserId == userId && p.BookId == id);
+            // בדיקה אם המשתמש שילם על הספר
+            var canRate = db.Payments.Any(p => p.UserId == userId && p.BookId == id);
 
             ViewBag.CanRate = canRate;
 
@@ -82,6 +81,7 @@ namespace e_Book.Controllers
 
             return View(book);
         }
+
 
         // GET: Books/Create
         public ActionResult Create()
@@ -563,17 +563,16 @@ namespace e_Book.Controllers
                 return RedirectToAction("Index");
             }
 
-            // בדיקה אם יש לפחות ספר אחד בספריה האישית (מושאל או נרכש)
-            bool hasBooksInLibrary = db.Borrows.Any(b => b.UserId == userId && !b.IsReturned) ||
-                                     db.Purchases.Any(p => p.UserId == userId);
+            // Check if the user has ever made a payment in the Payments table
+            bool hasPayments = db.Payments.Any(p => p.UserId == userId);
 
-            if (!hasBooksInLibrary)
+            if (!hasPayments)
             {
-                TempData["Error"] = "רק משתמשים עם ספרים בספרייה האישית יכולים להוסיף חוות דעת.";
+                TempData["Error"] = "רק משתמשים שרכשו ספר מסויים מהאתר יכולים להוסיף חוות דעת.";
                 return RedirectToAction("Index");
             }
 
-            // שמירת חוות דעת כללית
+            // Save general feedback
             var feedback = new Feedback
             {
                 UserId = userId,
@@ -589,6 +588,8 @@ namespace e_Book.Controllers
             TempData["Success"] = "חוות הדעת שלך נשמרה בהצלחה!";
             return RedirectToAction("Index");
         }
+
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
