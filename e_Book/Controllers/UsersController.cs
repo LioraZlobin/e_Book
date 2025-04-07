@@ -8,6 +8,9 @@ using System.Web;
 using System.Web.Mvc;
 using eBookLibrary.Models;
 using e_Book.Models;
+using System.Security.Cryptography;
+using System.Text;
+
 
 namespace e_Book.Controllers
 {
@@ -25,6 +28,23 @@ namespace e_Book.Controllers
                 return RedirectToAction("Login", "Account");
             }
             return View(db.Users.ToList());
+        }
+        // פונקציה להצפנת סיסמאות ב-SHA-256
+        private string EncryptPassword(string password)
+        {
+            using (SHA256 sha256Hash = SHA256.Create())
+            {
+                // המרת הסיסמה לבייטים
+                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(password));
+
+                // המרת התוצאה למחרוזת (Hexadecimal)
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    builder.Append(bytes[i].ToString("x2"));
+                }
+                return builder.ToString();
+            }
         }
 
         // GET: Users/Details/5
@@ -57,6 +77,9 @@ namespace e_Book.Controllers
         {
             if (ModelState.IsValid)
             {
+                // הצפנת הסיסמה
+                user.Password = EncryptPassword(user.Password);
+
                 db.Users.Add(user);
                 db.SaveChanges();
                 return RedirectToAction("Index");

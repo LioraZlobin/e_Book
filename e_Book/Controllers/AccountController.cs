@@ -6,6 +6,10 @@ using System.Web.Mvc;
 using System.Web.Security;
 using e_Book.Models;
 using eBookLibrary.Models;
+using System.Security.Cryptography;
+using System.Text;
+using e_Book.Services;  // הוספת השורה הזאת
+
 
 namespace e_Book.Controllers
 {
@@ -28,16 +32,19 @@ namespace e_Book.Controllers
 
             if (user != null)
             {
-                if (user.Password == password)
+                // הצפנת הסיסמה שהמשתמש הזין
+                string encryptedPassword = EncryptPassword(password);
+
+                // השוואת הסיסמה המוצפנת שנשמרה בבסיס הנתונים עם הסיסמה שהוזנה
+                if (user.Password == encryptedPassword)
                 {
-                    // יצירת כרטיסייה (Ticket) עבור FormsAuthentication
                     FormsAuthenticationTicket ticket = new FormsAuthenticationTicket(
                         1,
                         user.Email,
                         DateTime.Now,
                         DateTime.Now.AddMinutes(30),
                         false,
-                        user.Role, // שמירת התפקיד ב-Ticket
+                        user.Role,
                         FormsAuthentication.FormsCookiePath
                     );
 
@@ -45,12 +52,10 @@ namespace e_Book.Controllers
                     HttpCookie cookie = new HttpCookie(FormsAuthentication.FormsCookieName, encryptedTicket);
                     Response.Cookies.Add(cookie);
 
-                    // שמירת התפקיד והפרטים ב-Session
                     Session["Role"] = user.Role;
                     Session["UserId"] = user.UserId;
                     Session["UserName"] = user.Name;
 
-                    // הפנייה לפי תפקיד
                     if (user.Role == "Admin")
                     {
                         return RedirectToAction("AdminDashboard", "Account");
@@ -62,17 +67,34 @@ namespace e_Book.Controllers
                 }
                 else
                 {
-                    // סיסמה שגויה
                     ViewBag.Error = "סיסמה שגויה. נסה שוב.";
                     return View();
                 }
             }
 
-            // משתמש לא קיים
             ViewBag.Error = "אימייל זה לא נמצא במערכת. אנא נסה שוב.";
             return View();
         }
 
+
+
+        // הפונקציה שתבצע את ההצפנה
+        public string EncryptPassword(string password)
+        {
+            using (SHA256 sha256Hash = SHA256.Create())
+            {
+                // ממיר את הסיסמה לארגומנט byte[]
+                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(password));
+
+                // הופך את ה-byte[] לערך Hex
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    builder.Append(bytes[i].ToString("x2"));
+                }
+                return builder.ToString();
+            }
+        }
 
         public ActionResult AdminDashboard()
         {
@@ -101,6 +123,55 @@ namespace e_Book.Controllers
         {
             return View();
         }
+        [AllowAnonymous]
+        public ActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public ActionResult ForgotPassword(string email, string newPassword)
+        {
+            var user = db.Users.FirstOrDefault(u => u.Email == email);
+            if (user != null)
+            {
+                // הצפנת הסיסמה החדשה
+                string encryptedPassword = EncryptPassword(newPassword);
+                user.Password = encryptedPassword;
+
+                // שמירת השינויים
+                db.SaveChanges();
+
+                // שליחה למייל על שינוי הסיסמה
+                var emailService = new EmailService();
+                emailService.SendEmail(user.Email, "הסיסמה שלך שונתה", "הסיסמה שלך שונתה בהצלחה.");
+
+                ViewBag.Message = "הסיסמה החדשה נשלחה לאימייל שלך.";
+                return RedirectToAction("Login", "Account");
+            }
+            else
+            {
+                ViewBag.Error = "לא נמצא משתמש עם אימייל זה.";
+            }
+
+            return View("Login", "Account");
+        }
+
+
+
+
+
+        // פונקציה ליצירת סיסמה אקראית
+        private string GenerateRandomPassword()
+        {
+            var random = new Random();
+            const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+            string newPassword = new string(Enumerable.Repeat(validChars, 8)
+                                      .Select(s => s[random.Next(s.Length)]).ToArray());
+            return newPassword;
+        }
 
         [HttpPost]
         [AllowAnonymous]
@@ -112,26 +183,10 @@ namespace e_Book.Controllers
                 ViewBag.Error = "כל השדות חייבים להיות מלאים.";
                 return View();
             }
-            // בדיקת חוקיות הסיסמה
-            if (password.Length > 10)
-            {
-                ViewBag.Error = "אורך הסיסמה חייב להיות לכל היותר 10 תווים.";
-                return View();
-            }
 
-            if (!System.Text.RegularExpressions.Regex.IsMatch(password, @"[a-zA-Z]") || // לפחות אות אחת באנגלית
-                !System.Text.RegularExpressions.Regex.IsMatch(password, @"\d")) // לפחות מספר אחד
-            {
-                ViewBag.Error = "הסיסמה חייבת לכלול לפחות אות אחת באנגלית ולפחות מספר אחד.";
-                return View();
-            }
+            // הצפנת הסיסמה לפני שמירתה
+            string encryptedPassword = EncryptPassword(password);
 
-            // בדיקה האם הסיסמה כוללת רק תווים באנגלית ומספרים
-            if (!System.Text.RegularExpressions.Regex.IsMatch(password, @"^[a-zA-Z0-9]+$"))
-            {
-                ViewBag.Error = "הסיסמה חייבת להיות מורכבת מתווים באנגלית ומספרים בלבד.";
-                return View();
-            }
             var existingUser = db.Users.FirstOrDefault(u => u.Email == email);
             if (existingUser != null)
             {
@@ -143,9 +198,9 @@ namespace e_Book.Controllers
             {
                 Name = name,
                 Email = email,
-                Password = password,
-                Age = age, // הוספת הגיל למשתמש
-                Role = "User" // כל משתמש חדש יקבל תפקיד ברירת מחדל "User"
+                Password = encryptedPassword,  // שמירת הסיסמה המוצפנת
+                Age = age,
+                Role = "User"  // כל משתמש חדש יקבל תפקיד ברירת מחדל "User"
             };
 
             db.Users.Add(newUser);
@@ -156,6 +211,7 @@ namespace e_Book.Controllers
 
             return RedirectToAction("Index", "Books");
         }
+
 
 
     }
