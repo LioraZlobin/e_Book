@@ -573,6 +573,7 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\PasswordHelper.cs" />
     <Compile Include="Migrations\202501081826487_InitialCreate.cs" />
     <Compile Include="Migrations\202501081826487_InitialCreate.Designer.cs">
       <DependentUpon>202501081826487_InitialCreate.cs</DependentUpon>
@@ -679,6 +680,7 @@
     <Content Include="Views\CartItems\Index.cshtml" />
     <Content Include="Views\CartItems\Checkout.cshtml" />
     <Content Include="Views\Books\CreateServiceFeedback.cshtml" />
+    <Content Include="Views\Account\ResetPassword.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

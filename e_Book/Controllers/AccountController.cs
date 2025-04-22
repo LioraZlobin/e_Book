@@ -6,6 +6,7 @@ using System.Web.Mvc;
 using System.Web.Security;
 using e_Book.Models;
 using eBookLibrary.Models;
+using E_Book.Helpers;
 
 namespace e_Book.Controllers
 {
@@ -28,7 +29,9 @@ namespace e_Book.Controllers
 
             if (user != null)
             {
-                if (user.Password == password)
+                string hashedPassword = PasswordHelper.HashPassword(password);
+                if (user.Password == hashedPassword)
+
                 {
                     // יצירת כרטיסייה (Ticket) עבור FormsAuthentication
                     FormsAuthenticationTicket ticket = new FormsAuthenticationTicket(
@@ -87,6 +90,27 @@ namespace e_Book.Controllers
             return View();
         }
 
+        [AllowAnonymous]
+        public ActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        public ActionResult ForgotPassword(string email)
+        {
+            var user = db.Users.FirstOrDefault(u => u.Email == email);
+            if (user == null)
+            {
+                ViewBag.Error = "לא נמצא משתמש עם כתובת אימייל זו.";
+                return View();
+            }
+
+            // בעתיד אפשר לייצר טוקן ייחודי ולשלוח קישור – כאן נעבור ישר
+            TempData["EmailForReset"] = email;
+            return RedirectToAction("ResetPassword");
+        }
 
 
         public ActionResult Logout()
@@ -94,6 +118,38 @@ namespace e_Book.Controllers
             FormsAuthentication.SignOut();
             Session.Abandon();
             return RedirectToAction("Login", "Account");
+        }
+        [AllowAnonymous]
+  
+        public ActionResult ResetPassword()
+        {
+            return View();
+        }
+
+
+
+        [HttpPost]
+        [AllowAnonymous]
+        public ActionResult ResetPassword(string email, string newPassword)
+        {
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(newPassword))
+            {
+                ViewBag.Error = "יש למלא את כל השדות.";
+                return View();
+            }
+
+            var user = db.Users.FirstOrDefault(u => u.Email == email);
+            if (user == null)
+            {
+                ViewBag.Error = "אימייל זה לא נמצא במערכת.";
+                return View();
+            }
+
+            user.Password = PasswordHelper.HashPassword(newPassword);
+            db.SaveChanges();
+
+            ViewBag.Success = "הסיסמה עודכנה בהצלחה.";
+            return RedirectToAction("Login");
         }
 
         [AllowAnonymous]
@@ -138,15 +194,17 @@ namespace e_Book.Controllers
                 ViewBag.Error = "האימייל הזה כבר רשום במערכת.";
                 return View();
             }
+            string hashedPassword = PasswordHelper.HashPassword(password);
 
             User newUser = new User
             {
                 Name = name,
                 Email = email,
-                Password = password,
-                Age = age, // הוספת הגיל למשתמש
-                Role = "User" // כל משתמש חדש יקבל תפקיד ברירת מחדל "User"
+                Password = hashedPassword, // סיסמה מוצפנת
+                Age = age,
+                Role = "User"
             };
+
 
             db.Users.Add(newUser);
             db.SaveChanges();
