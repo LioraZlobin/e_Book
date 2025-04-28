@@ -7,6 +7,8 @@ using System.Web.Security;
 using e_Book.Models;
 using eBookLibrary.Models;
 using E_Book.Helpers;
+using System.Data.Entity.Validation;
+
 
 namespace e_Book.Controllers
 {
@@ -25,56 +27,42 @@ namespace e_Book.Controllers
         [AllowAnonymous]
         public ActionResult Login(string email, string password)
         {
-            var user = db.Users.FirstOrDefault(u => u.Email == email);
+            // החולשה - השאילתא כוללת גם את הסיסמה ולא בודקת בצורה בטוחה
+            var user = db.Users.SqlQuery(
+                "SELECT * FROM Users WHERE Email = '" + email + "' AND Password = '" + PasswordHelper.HashPassword(password) + "'"
+            ).FirstOrDefault();
 
             if (user != null)
             {
-                string hashedPassword = PasswordHelper.HashPassword(password);
-                if (user.Password == hashedPassword)
+                // יצירת כרטיסיה (Ticket)
+                FormsAuthenticationTicket ticket = new FormsAuthenticationTicket(
+                    1,
+                    user.Email,
+                    DateTime.Now,
+                    DateTime.Now.AddMinutes(30),
+                    false,
+                    user.Role,
+                    FormsAuthentication.FormsCookiePath
+                );
 
-                {
-                    // יצירת כרטיסייה (Ticket) עבור FormsAuthentication
-                    FormsAuthenticationTicket ticket = new FormsAuthenticationTicket(
-                        1,
-                        user.Email,
-                        DateTime.Now,
-                        DateTime.Now.AddMinutes(30),
-                        false,
-                        user.Role, // שמירת התפקיד ב-Ticket
-                        FormsAuthentication.FormsCookiePath
-                    );
+                string encryptedTicket = FormsAuthentication.Encrypt(ticket);
+                HttpCookie cookie = new HttpCookie(FormsAuthentication.FormsCookieName, encryptedTicket);
+                Response.Cookies.Add(cookie);
 
-                    string encryptedTicket = FormsAuthentication.Encrypt(ticket);
-                    HttpCookie cookie = new HttpCookie(FormsAuthentication.FormsCookieName, encryptedTicket);
-                    Response.Cookies.Add(cookie);
+                Session["Role"] = user.Role;
+                Session["UserId"] = user.UserId;
+                Session["UserName"] = user.Name;
 
-                    // שמירת התפקיד והפרטים ב-Session
-                    Session["Role"] = user.Role;
-                    Session["UserId"] = user.UserId;
-                    Session["UserName"] = user.Name;
-
-                    // הפנייה לפי תפקיד
-                    if (user.Role == "Admin")
-                    {
-                        return RedirectToAction("AdminDashboard", "Account");
-                    }
-                    else
-                    {
-                        return RedirectToAction("Index", "Books");
-                    }
-                }
-                else
-                {
-                    // סיסמה שגויה
-                    ViewBag.Error = "סיסמה שגויה. נסה שוב.";
-                    return View();
-                }
+                return user.Role == "Admin"
+                    ? RedirectToAction("AdminDashboard", "Account")
+                    : RedirectToAction("Index", "Books");
             }
 
-            // משתמש לא קיים
-            ViewBag.Error = "אימייל זה לא נמצא במערכת. אנא נסה שוב.";
+            ViewBag.Error = "אימייל או סיסמה אינם נכונים. נסה שוב.";
             return View();
         }
+
+
 
 
         public ActionResult AdminDashboard()
@@ -138,82 +126,192 @@ namespace e_Book.Controllers
                 return View();
             }
 
-            var user = db.Users.FirstOrDefault(u => u.Email == email);
-            if (user == null)
+            string hashedPassword = PasswordHelper.HashPassword(newPassword);
+
+            // שלב 1: בדיקה אם המשתמש קיים
+            var userExists = db.Users.Any(u => u.Email == email);
+            if (!userExists)
             {
                 ViewBag.Error = "אימייל זה לא נמצא במערכת.";
                 return View();
             }
 
-            user.Password = PasswordHelper.HashPassword(newPassword);
-            db.SaveChanges();
+            // שלב 2: עדכון ישיר ב-SQL כדי לא להפעיל ולידציות של EF
+            db.Database.ExecuteSqlCommand(
+                "UPDATE Users SET Password = @p0 WHERE Email = @p1",
+                hashedPassword, email
+            );
 
-            ViewBag.Success = "הסיסמה עודכנה בהצלחה.";
+            TempData["SuccessMessage"] = "הסיסמה עודכנה בהצלחה.";
             return RedirectToAction("Login");
         }
+
+
+
 
         [AllowAnonymous]
         public ActionResult Register()
         {
             return View();
         }
+        public static bool IsValidCardNumber(string cardNumber)
+        {
+            int sum = 0;
+            bool alternate = false;
+
+            for (int i = cardNumber.Length - 1; i >= 0; i--)
+            {
+                char c = cardNumber[i];
+                if (!char.IsDigit(c))
+                    return false;
+
+                int digit = c - '0';
+                if (alternate)
+                {
+                    digit *= 2;
+                    if (digit > 9)
+                        digit -= 9;
+                }
+                sum += digit;
+                alternate = !alternate;
+            }
+
+            return (sum % 10 == 0);
+        }
 
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public ActionResult Register(string name, string email, string password, int age)
+        public ActionResult Register(string name, string email, string password, int age, string creditCardNumber, string expiryDate, string cvc)
         {
-            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password) || age <= 0)
+            // בדיקה אם שדות ריקים
+            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(email) ||
+                string.IsNullOrWhiteSpace(password) || age <= 0 ||
+                string.IsNullOrWhiteSpace(creditCardNumber) || string.IsNullOrWhiteSpace(expiryDate) || string.IsNullOrWhiteSpace(cvc))
             {
-                ViewBag.Error = "כל השדות חייבים להיות מלאים.";
-                return View();
+                ModelState.AddModelError("", "כל השדות חייבים להיות מלאים.");
             }
-            // בדיקת חוקיות הסיסמה
+
+            // אימייל תקין
+            if (!System.Text.RegularExpressions.Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            {
+                ModelState.AddModelError("Email", "כתובת אימייל אינה תקינה.");
+            }
+
+            // בדיקת ת\"ז – בדיוק 9 ספרות
+            if (name != null && name.All(char.IsDigit) && name.Length == 9)
+            {
+                // אם במקרה הכנסת ת\"ז במקום שם
+                ModelState.AddModelError("Name", "נא להזין שם ולא תעודת זהות.");
+            }
+
+            // סיסמה – עד 10 תווים, לפחות אות אחת ומספר
             if (password.Length > 10)
             {
-                ViewBag.Error = "אורך הסיסמה חייב להיות לכל היותר 10 תווים.";
-                return View();
+                ModelState.AddModelError("Password", "אורך הסיסמה חייב להיות לכל היותר 10 תווים.");
             }
-
-            if (!System.Text.RegularExpressions.Regex.IsMatch(password, @"[a-zA-Z]") || // לפחות אות אחת באנגלית
-                !System.Text.RegularExpressions.Regex.IsMatch(password, @"\d")) // לפחות מספר אחד
+            if (!System.Text.RegularExpressions.Regex.IsMatch(password, @"[a-zA-Z]") ||
+                !System.Text.RegularExpressions.Regex.IsMatch(password, @"\d"))
             {
-                ViewBag.Error = "הסיסמה חייבת לכלול לפחות אות אחת באנגלית ולפחות מספר אחד.";
-                return View();
+                ModelState.AddModelError("Password", "הסיסמה חייבת לכלול לפחות אות אחת באנגלית ולפחות מספר אחד.");
             }
-
-            // בדיקה האם הסיסמה כוללת רק תווים באנגלית ומספרים
             if (!System.Text.RegularExpressions.Regex.IsMatch(password, @"^[a-zA-Z0-9]+$"))
             {
-                ViewBag.Error = "הסיסמה חייבת להיות מורכבת מתווים באנגלית ומספרים בלבד.";
-                return View();
+                ModelState.AddModelError("Password", "הסיסמה חייבת להיות מורכבת מתווים באנגלית ומספרים בלבד.");
             }
+
+            // אימייל כבר קיים
             var existingUser = db.Users.FirstOrDefault(u => u.Email == email);
             if (existingUser != null)
             {
-                ViewBag.Error = "האימייל הזה כבר רשום במערכת.";
+                ModelState.AddModelError("Email", "האימייל הזה כבר רשום במערכת.");
+            }
+
+            // כרטיס אשראי לפי אלגוריתם לונה
+            if (!IsValidCardNumber(creditCardNumber))
+            {
+                ModelState.AddModelError("CreditCardNumber", "מספר כרטיס האשראי אינו תקף לפי אלגוריתם לונה.");
+            }
+
+            // תוקף בפורמט MM/YY
+            if (!System.Text.RegularExpressions.Regex.IsMatch(expiryDate, @"^(0[1-9]|1[0-2])\/([0-9]{2})$"))
+            {
+                ModelState.AddModelError("ExpiryDate", "תוקף הכרטיס חייב להיות בפורמט MM/YY.");
+            }
+             else
+    {
+        // בדוק אם התאריך לא עבר את התאריך הנוכחי
+        string[] parts = expiryDate.Split('/');
+        int month = int.Parse(parts[0]);
+        int year = int.Parse(parts[1]);
+
+        // תאריך הנוכחי
+        DateTime currentDate = DateTime.Now;
+        int currentMonth = currentDate.Month;
+        int currentYear = currentDate.Year % 100; // שנה לשניים האחרונים (כלומר 2025 -> 25)
+
+        // השוואת החודש והשנה שהוזנו לתאריך הנוכחי
+        if (year < currentYear || (year == currentYear && month < currentMonth))
+        {
+            ModelState.AddModelError("ExpiryDate", "תוקף הכרטיס לא יכול להיות עבר.");
+        }
+    }
+            // CVC – 3 ספרות בדיוק
+            if (cvc.Length != 3 || !cvc.All(char.IsDigit))
+            {
+                ModelState.AddModelError("CVC", "CVC חייב להיות בדיוק 3 ספרות.");
+            }
+
+            // סיום ולידציה
+            if (!ModelState.IsValid)
+            {
                 return View();
             }
-            string hashedPassword = PasswordHelper.HashPassword(password);
 
+            // יצירת משתמש
+            string hashedPassword = PasswordHelper.HashPassword(password);
             User newUser = new User
             {
                 Name = name,
                 Email = email,
-                Password = hashedPassword, // סיסמה מוצפנת
+                Password = hashedPassword,
                 Age = age,
-                Role = "User"
+                Role = "User",
+                CreditCardNumber = creditCardNumber,
+                ExpiryDate = expiryDate,
+                CVC = cvc
             };
-
 
             db.Users.Add(newUser);
             db.SaveChanges();
 
-            // לאחר ההרשמה נבצע התחברות אוטומטית
             FormsAuthentication.SetAuthCookie(newUser.Email, false);
-
             return RedirectToAction("Index", "Books");
         }
+        [AllowAnonymous]
+        public ActionResult TestInjection(string email)
+        {
+            // מבצע שאילתא ישירה לטקסט, ולא מנסה להחזיר אובייקט User
+            var results = db.Database.SqlQuery<string>(
+                "SELECT CreditCardNumber FROM Users WHERE Email = '" + email + "'"
+            ).ToList();
+
+            ViewBag.Results = results;
+            return View();
+        }
+        [AllowAnonymous]
+        public ActionResult TestInjectionFree(string sql)
+        {
+            var results = db.Database.SqlQuery<string>(
+                sql
+            ).ToList();
+
+            ViewBag.Results = results;
+            return View("TestInjection");
+
+        }
+
+
 
 
     }

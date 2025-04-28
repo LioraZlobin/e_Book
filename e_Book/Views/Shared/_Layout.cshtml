@@ -30,6 +30,8 @@
                     <li class="nav-item">
                         @Html.ActionLink("צור קשר", "Contact", "Home", null, new { @class = "nav-link" })
                     </li>
+                    
+
                     <li class="nav-item">
                         <a class="nav-link" href="@Url.Action("Index", "CartItems")">
                             🛒 עגלת הקניות
@@ -43,6 +45,7 @@
                         </li>
                     }
                 </ul>
+
                 <ul class="navbar-nav ms-auto">
                     @if (User.Identity.IsAuthenticated)
                     {

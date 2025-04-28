@@ -1,0 +1,19 @@
+﻿@{
+    ViewBag.Title = "Test Injection Results";
+}
+
+<h2>Results:</h2>
+
+@if (ViewBag.Results != null)
+{
+    <ul>
+        @foreach (var item in ViewBag.Results)
+        {
+            <li>@item</li>
+        }
+    </ul>
+}
+else
+{
+    <p>No results found.</p>
+}

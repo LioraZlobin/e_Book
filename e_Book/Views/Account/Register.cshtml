@@ -1,33 +1,45 @@
-﻿@{
-    ViewBag.Title = "הרשמה למערכת";
+﻿@model e_Book.Models.User
+@{
+    ViewBag.Title = "הרשמה";
 }
-
-<h2>הרשמה למערכת</h2>
-
-@if (ViewBag.Error != null)
-{
-    <div class="alert alert-danger">@ViewBag.Error</div>
-}
+<h2>הרשמה</h2>
 
 @using (Html.BeginForm("Register", "Account", FormMethod.Post))
 {
     @Html.AntiForgeryToken()
-    <div class="form-group">
-        <label>שם מלא:</label>
-        <input type="text" name="name" class="form-control" placeholder="הזן שם מלא" />
-    </div>
-    <div class="form-group">
-        <label>אימייל:</label>
-        <input type="email" name="email" class="form-control" placeholder="הזן אימייל" />
-    </div>
-    <div class="form-group">
-        <label>סיסמה:</label>
-        <input type="password" name="password" class="form-control" placeholder="הזן סיסמה" />
-    </div>
-    <div class="form-group">
-        <label>גיל:</label>
-        <input type="number" name="age" class="form-control" placeholder="הזן גיל" min="1" />
-    </div>
-    <button type="submit" class="btn btn-primary">הרשם</button>
-}
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
+    <div class="form-group">
+        <label>שם:</label>
+        @Html.TextBoxFor(m => m.Name, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+
+        <label>אימייל:</label>
+        @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger" })
+
+        <label>סיסמה:</label>
+        @Html.PasswordFor(m => m.Password, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger" })
+
+        <label>גיל:</label>
+        @Html.TextBoxFor(m => m.Age, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Age, "", new { @class = "text-danger" })
+
+        <label>מספר כרטיס אשראי:</label>
+        @Html.TextBox("creditCardNumber", null, new { @class = "form-control" })
+        @Html.ValidationMessage("CreditCardNumber", "", new { @class = "text-danger" })
+
+        <label>תוקף:</label>
+        @Html.TextBox("expiryDate", null, new { @class = "form-control" })
+        @Html.ValidationMessage("ExpiryDate", "", new { @class = "text-danger" })
+
+        <label>CVC:</label>
+        @Html.TextBox("cvc", null, new { @class = "form-control" })
+        @Html.ValidationMessage("CVC", "", new { @class = "text-danger" })
+
+        <br />
+        <button type="submit" class="btn btn-primary">הרשמה</button>
+
+    </div>
+}
