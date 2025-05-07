@@ -8,6 +8,7 @@ using e_Book.Models;
 using eBookLibrary.Models;
 using E_Book.Helpers;
 using System.Data.Entity.Validation;
+using System.Data.SqlClient;
 
 
 namespace e_Book.Controllers
@@ -27,10 +28,12 @@ namespace e_Book.Controllers
         [AllowAnonymous]
         public ActionResult Login(string email, string password)
         {
+            var user = db.Users.FirstOrDefault(u => u.Email == email);
+
             // החולשה - השאילתא כוללת גם את הסיסמה ולא בודקת בצורה בטוחה
-            var user = db.Users.SqlQuery(
-                "SELECT * FROM Users WHERE Email = '" + email + "' AND Password = '" + PasswordHelper.HashPassword(password) + "'"
-            ).FirstOrDefault();
+            //var user = db.Users.SqlQuery(
+            //  "SELECT * FROM Users WHERE Email = '" + email + "' AND Password = '" + PasswordHelper.HashPassword(password) + "'"
+            //).FirstOrDefault();
 
             if (user != null)
             {
@@ -289,27 +292,48 @@ namespace e_Book.Controllers
             return RedirectToAction("Index", "Books");
         }
         [AllowAnonymous]
-        public ActionResult TestInjection(string email)
+        public ActionResult TestInjectionSafe(string email)
         {
-            // מבצע שאילתא ישירה לטקסט, ולא מנסה להחזיר אובייקט User
-            var results = db.Database.SqlQuery<string>(
-                "SELECT CreditCardNumber FROM Users WHERE Email = '" + email + "'"
-            ).ToList();
-
-            ViewBag.Results = results;
-            return View();
-        }
-        [AllowAnonymous]
-        public ActionResult TestInjectionFree(string sql)
-        {
-            var results = db.Database.SqlQuery<string>(
-                sql
-            ).ToList();
+            // שימוש ב-LINQ כדי לבצע את השאילתה בצורה בטוחה
+            var results = db.Users
+                            .Where(u => u.Email == email)
+                            .Select(u => u.CreditCardNumber)
+                            .ToList();
 
             ViewBag.Results = results;
             return View("TestInjection");
-
         }
+
+
+
+        [AllowAnonymous]
+        public ActionResult TestInjectionFree(string sql)
+        {
+            if (string.IsNullOrWhiteSpace(sql))
+            {
+                ViewBag.Error = "SQL query cannot be empty.";
+                return View("TestInjection");
+            }
+
+            // Check for potentially harmful SQL commands like DROP or DELETE using IndexOf for case-insensitive search
+            if (sql.IndexOf("DROP", StringComparison.OrdinalIgnoreCase) >= 0 || sql.IndexOf("DELETE", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                ViewBag.Error = "Unsafe SQL query detected.";
+                return View("TestInjection");
+            }
+
+            // Safely execute the query using parameters
+            var results = db.Database.SqlQuery<string>("SELECT CreditCardNumber FROM Users WHERE Email = @p0", new SqlParameter("@p0", sql))
+                                     .ToList();
+
+            ViewBag.Results = results;
+            return View("TestInjection");
+        }
+
+
+
+
+
 
 
 
